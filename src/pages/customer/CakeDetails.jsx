@@ -1,248 +1,7 @@
-// import { useState } from "react";
-// import { useNavigate, useParams } from "react-router-dom";
-// import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
-// import toast, { Toaster } from "react-hot-toast";
-
-// import { getCakeById } from "../../utils/catalog";
-// import { useCart } from "../../context/CartContext";
-
-// const CakeDetails = () => {
-//   const { id } = useParams();
-//   const navigate = useNavigate();
-
-//   const { addToCart } = useCart();
-
-//   const cake = getCakeById(id);
-
-//   const [selectedSize, setSelectedSize] = useState(
-//     cake?.sizes?.[0]?.size || "",
-//   );
-
-//   const [selectedColor, setSelectedColor] = useState(cake?.colors?.[0] || "");
-
-//   const [quantity, setQuantity] = useState(1);
-
-//   const [cakeMessage, setCakeMessage] = useState("");
-
-//   if (!cake) {
-//     return (
-//       <div className="cake-not-found">
-//         <h2>Cake not found.</h2>
-
-//         <button onClick={() => navigate("/cakes")}>Back to Cakes</button>
-//       </div>
-//     );
-//   }
-
-//   const selectedSizeData = cake.sizes.find(
-//     (item) => item.size === selectedSize,
-//   );
-
-//   const selectedPrice = selectedSizeData?.price || 0;
-
-//   const handleAddToCart = () => {
-//     if (!selectedSize) {
-//       toast.error("Please select a cake size.");
-//       return;
-//     }
-
-//     if (!selectedColor) {
-//       toast.error("Please select a cake color.");
-//       return;
-//     }
-
-//     addToCart({
-//       id: cake.id,
-//       name: cake.name,
-//       image: cake.image,
-//       selectedSize,
-//       selectedColor,
-//       price: selectedPrice,
-//       quantity,
-//       cakeMessage,
-//     });
-
-//     toast.success("Cake added to cart!");
-//   };
-
-//   return (
-//     <>
-//       <Toaster position="top-right" />
-
-//       <section className="cake-details-page">
-//         <div className="container">
-//           <button
-//             className="cake-back-button"
-//             onClick={() => navigate("/cakes")}
-//           >
-//             <ArrowLeft size={17} />
-//             Back to cakes
-//           </button>
-
-//           <div className="cake-details-grid">
-//             {/* IMAGE */}
-
-//             <div className="cake-details-image-area">
-//               <div className="cake-main-image">
-//                 <img src={cake.image} alt={cake.name} />
-//               </div>
-
-//               <div className="cake-detail-label">Handcrafted Fresh</div>
-//             </div>
-
-//             {/* INFORMATION */}
-
-//             <div className="cake-details-content">
-//               <span className="cake-details-category">{cake.category}</span>
-
-//               <h1>{cake.name}</h1>
-
-//               <div className="cake-details-price">
-//                 Rs. {selectedPrice.toLocaleString()}
-//               </div>
-
-//               <p className="cake-details-description">{cake.description}</p>
-
-//               {/* SIZE */}
-
-//               <div className="cake-option-section">
-//                 <div className="cake-option-heading">
-//                   <h4>Select Size</h4>
-//                   <span>{selectedSize}</span>
-//                 </div>
-
-//                 <div className="cake-size-options">
-//                   {cake.sizes.map((item) => (
-//                     <button
-//                       key={item.size}
-//                       className={
-//                         selectedSize === item.size
-//                           ? "cake-size-button active"
-//                           : "cake-size-button"
-//                       }
-//                       onClick={() => setSelectedSize(item.size)}
-//                     >
-//                       <strong>{item.size}</strong>
-
-//                       <span>Rs. {item.price.toLocaleString()}</span>
-//                     </button>
-//                   ))}
-//                 </div>
-//               </div>
-
-//               {/* COLOR */}
-
-//               <div className="cake-option-section">
-//                 <div className="cake-option-heading">
-//                   <h4>Select Color</h4>
-//                   <span>{selectedColor}</span>
-//                 </div>
-
-//                 <div className="cake-color-options">
-//                   {cake.colors.map((color) => (
-//                     <button
-//                       key={color}
-//                       className={
-//                         selectedColor === color
-//                           ? "cake-color-button active"
-//                           : "cake-color-button"
-//                       }
-//                       onClick={() => setSelectedColor(color)}
-//                     >
-//                       <span
-//                         className={`color-circle ${color
-//                           .toLowerCase()
-//                           .replaceAll(" ", "-")}`}
-//                       ></span>
-
-//                       {color}
-//                     </button>
-//                   ))}
-//                 </div>
-//               </div>
-
-//               {/* MESSAGE */}
-
-//               <div className="cake-option-section">
-//                 <div className="cake-option-heading">
-//                   <h4>Message on Cake</h4>
-
-//                   <span>Optional</span>
-//                 </div>
-
-//                 <input
-//                   type="text"
-//                   className="cake-message-input"
-//                   placeholder='e.g. "Happy Birthday Sarah!"'
-//                   maxLength={50}
-//                   value={cakeMessage}
-//                   onChange={(event) => setCakeMessage(event.target.value)}
-//                 />
-
-//                 <small className="cake-message-count">
-//                   {cakeMessage.length}/50
-//                 </small>
-//               </div>
-
-//               {/* QUANTITY + CART */}
-
-//               <div className="cake-cart-actions">
-//                 <div className="quantity-selector">
-//                   <button
-//                     onClick={() =>
-//                       setQuantity((previous) => Math.max(1, previous - 1))
-//                     }
-//                   >
-//                     <Minus size={16} />
-//                   </button>
-
-//                   <span>{quantity}</span>
-
-//                   <button
-//                     onClick={() => setQuantity((previous) => previous + 1)}
-//                   >
-//                     <Plus size={16} />
-//                   </button>
-//                 </div>
-
-//                 <button
-//                   className="add-to-cart-button"
-//                   onClick={handleAddToCart}
-//                 >
-//                   <ShoppingBag size={18} />
-//                   Add to Cart
-//                   <span>Rs. {(selectedPrice * quantity).toLocaleString()}</span>
-//                 </button>
-//               </div>
-
-//               <div className="cake-detail-note">
-//                 <div>
-//                   <strong>Freshly prepared</strong>
-//                   <span>Every cake is prepared fresh for your order.</span>
-//                 </div>
-
-//                 <div>
-//                   <strong>Custom details</strong>
-//                   <span>
-//                     Colours and finishing may vary slightly as each cake is
-//                     handmade.
-//                   </span>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </section>
-//     </>
-//   );
-// };
-
-// export default CakeDetails;
-
-
-
 import { useEffect, useMemo, useState } from "react";
+
 import { Link, useParams } from "react-router-dom";
+
 import {
   ArrowLeft,
   Check,
@@ -254,9 +13,10 @@ import {
 } from "lucide-react";
 
 import { useCart } from "../../context/CartContext";
-import { getCakeById } from "../../utils/catalog";
 
 import "./CakeDetails.css";
+
+const API_ROOT = "https://coreops.pk/cakes/api";
 
 const CakeDetails = () => {
   const { id } = useParams();
@@ -264,15 +24,207 @@ const CakeDetails = () => {
   const { addToCart } = useCart();
 
   // ==========================================
-  // CAKE
+  // STATE
   // ==========================================
 
-  const cake = useMemo(() => {
-    return getCakeById(id);
+  const [cake, setCake] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState("");
+
+  const [activeImage, setActiveImage] = useState("");
+
+  const [selectedSizeId, setSelectedSizeId] = useState(null);
+
+  const [selectedColorId, setSelectedColorId] = useState(null);
+
+  const [quantity, setQuantity] = useState(1);
+
+  const [addedMessage, setAddedMessage] = useState(false);
+
+  // ==========================================
+  // NORMALIZE CAKE
+  // ==========================================
+
+  const normalizeCake = (rawCake) => {
+    const category =
+      rawCake.category && typeof rawCake.category === "object"
+        ? rawCake.category
+        : null;
+
+    // ========================================
+    // IMAGES
+    // ========================================
+
+    const galleryImages = Array.isArray(rawCake.images)
+      ? rawCake.images
+          .map((image) => {
+            if (typeof image === "string") {
+              return image;
+            }
+
+            return image.image_url || image.url || "";
+          })
+          .filter(Boolean)
+      : [];
+
+    const mainImage =
+      rawCake.main_image || rawCake.image || galleryImages[0] || "";
+
+    const images = [...new Set([mainImage, ...galleryImages].filter(Boolean))];
+
+    // ========================================
+    // SIZES
+    // ========================================
+
+    const sizes = Array.isArray(rawCake.sizes)
+      ? rawCake.sizes
+          .filter((size) => !size.status || size.status === "Active")
+          .map((size) => ({
+            id: Number(size.size_id || size.id || 0),
+
+            size: size.size_name || size.name || size.size || "",
+
+            name: size.size_name || size.name || size.size || "",
+
+            price: Number(size.price || 0),
+
+            status: size.status || "Active",
+          }))
+          .filter((size) => size.id > 0 && size.price > 0)
+      : [];
+
+    // ========================================
+    // COLORS
+    // ========================================
+
+    const colors = Array.isArray(rawCake.colors)
+      ? rawCake.colors
+          .filter((color) => !color.status || color.status === "Active")
+          .map((color) => ({
+            id: Number(color.color_id || color.id || 0),
+
+            name: color.color_name || color.name || "",
+
+            hex: color.hex_code || color.hex || "#ffffff",
+
+            status: color.status || "Active",
+          }))
+          .filter((color) => color.id > 0)
+      : [];
+
+    return {
+      id: Number(rawCake.id),
+
+      name: rawCake.name || "",
+
+      categoryId: Number(category?.id || rawCake.category_id || 0),
+
+      category:
+        category?.name || rawCake.category_name || rawCake.category || "",
+
+      shortDescription: rawCake.short_description || "",
+
+      description: rawCake.description || rawCake.short_description || "",
+
+      image: mainImage,
+
+      mainImage,
+
+      images,
+
+      sizes,
+
+      colors,
+
+      featured: Number(rawCake.featured) === 1 || rawCake.featured === true,
+
+      status: rawCake.status || "Active",
+    };
+  };
+
+  // ==========================================
+  // FETCH CAKE
+  // ==========================================
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCake = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(`${API_ROOT}/Cakes/getAll.php`);
+
+        let result;
+
+        try {
+          result = await response.json();
+        } catch {
+          throw new Error("Server returned an invalid response.");
+        }
+
+        if (!response.ok || result.status !== "success") {
+          throw new Error(result.message || "Unable to load cake.");
+        }
+
+        const rows = Array.isArray(result.data) ? result.data : [];
+
+        const foundCake = rows.find((item) => Number(item.id) === Number(id));
+
+        if (!active) {
+          return;
+        }
+
+        if (!foundCake || foundCake.status !== "Active") {
+          setCake(null);
+          setError("This cake is unavailable.");
+          return;
+        }
+
+        const normalized = normalizeCake(foundCake);
+
+        if (normalized.sizes.length === 0) {
+          setCake(null);
+          setError("This cake does not currently have an available size.");
+          return;
+        }
+
+        setCake(normalized);
+
+        setActiveImage(normalized.images[0] || normalized.image || "");
+
+        setSelectedSizeId(normalized.sizes[0]?.id || null);
+
+        setSelectedColorId(normalized.colors[0]?.id || null);
+
+        setQuantity(1);
+      } catch (err) {
+        console.error("Cake details loading error:", err);
+
+        if (active) {
+          setCake(null);
+
+          setError(err.message || "Unable to load cake.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadCake();
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   // ==========================================
-  // IMAGES
+  // CAKE IMAGES
   // ==========================================
 
   const cakeImages = useMemo(() => {
@@ -280,15 +232,8 @@ const CakeDetails = () => {
       return [];
     }
 
-    if (
-      Array.isArray(cake.images) &&
-      cake.images.length > 0
-    ) {
-      return [
-        ...new Set(
-          cake.images.filter(Boolean)
-        ),
-      ];
+    if (Array.isArray(cake.images) && cake.images.length > 0) {
+      return [...new Set(cake.images.filter(Boolean))];
     }
 
     if (cake.image) {
@@ -299,85 +244,47 @@ const CakeDetails = () => {
   }, [cake]);
 
   // ==========================================
-  // STATE
+  // SELECTED SIZE
   // ==========================================
 
-  const [activeImage, setActiveImage] =
-    useState("");
-
-  const [selectedSize, setSelectedSize] =
-    useState("");
-
-  const [selectedColor, setSelectedColor] =
-    useState("");
-
-  const [quantity, setQuantity] =
-    useState(1);
-
-  const [addedMessage, setAddedMessage] =
-    useState(false);
-
-  // ==========================================
-  // SET DEFAULTS
-  // ==========================================
-
-  useEffect(() => {
+  const selectedSizeData = useMemo(() => {
     if (!cake) {
-      return;
+      return null;
     }
 
-    setActiveImage(
-      cakeImages[0] || cake.image || ""
+    return (
+      cake.sizes.find((size) => Number(size.id) === Number(selectedSizeId)) ||
+      null
     );
+  }, [cake, selectedSizeId]);
 
-    if (
-      Array.isArray(cake.sizes) &&
-      cake.sizes.length > 0
-    ) {
-      setSelectedSize(
-        cake.sizes[0].size
-      );
+  // ==========================================
+  // SELECTED COLOR
+  // ==========================================
+
+  const selectedColorData = useMemo(() => {
+    if (!cake) {
+      return null;
     }
 
-    if (
-      Array.isArray(cake.colors) &&
-      cake.colors.length > 0
-    ) {
-      setSelectedColor(
-        cake.colors[0]
-      );
-    }
-
-    setQuantity(1);
-  }, [cake, cakeImages]);
-
-  // ==========================================
-  // SELECTED SIZE OBJECT
-  // ==========================================
-
-  const selectedSizeData =
-    cake?.sizes?.find(
-      (item) =>
-        item.size === selectedSize
+    return (
+      cake.colors.find(
+        (color) => Number(color.id) === Number(selectedColorId),
+      ) || null
     );
+  }, [cake, selectedColorId]);
 
-  const selectedPrice =
-    Number(
-      selectedSizeData?.price || 0
-    );
+  const selectedPrice = Number(selectedSizeData?.price || 0);
 
-  const totalPrice =
-    selectedPrice * quantity;
+  const totalPrice = selectedPrice * quantity;
 
   // ==========================================
-  // GALLERY NAVIGATION
+  // GALLERY
   // ==========================================
 
-  const currentImageIndex =
-    cakeImages.findIndex(
-      (image) =>
-        image === activeImage
-    );
+  const currentImageIndex = cakeImages.findIndex(
+    (image) => image === activeImage,
+  );
 
   const showPreviousImage = () => {
     if (cakeImages.length <= 1) {
@@ -385,13 +292,9 @@ const CakeDetails = () => {
     }
 
     const newIndex =
-      currentImageIndex <= 0
-        ? cakeImages.length - 1
-        : currentImageIndex - 1;
+      currentImageIndex <= 0 ? cakeImages.length - 1 : currentImageIndex - 1;
 
-    setActiveImage(
-      cakeImages[newIndex]
-    );
+    setActiveImage(cakeImages[newIndex]);
   };
 
   const showNextImage = () => {
@@ -400,14 +303,9 @@ const CakeDetails = () => {
     }
 
     const newIndex =
-      currentImageIndex >=
-      cakeImages.length - 1
-        ? 0
-        : currentImageIndex + 1;
+      currentImageIndex >= cakeImages.length - 1 ? 0 : currentImageIndex + 1;
 
-    setActiveImage(
-      cakeImages[newIndex]
-    );
+    setActiveImage(cakeImages[newIndex]);
   };
 
   // ==========================================
@@ -415,19 +313,11 @@ const CakeDetails = () => {
   // ==========================================
 
   const increaseQuantity = () => {
-    setQuantity(
-      (previous) =>
-        previous + 1
-    );
+    setQuantity((previous) => previous + 1);
   };
 
   const decreaseQuantity = () => {
-    setQuantity((previous) =>
-      Math.max(
-        1,
-        previous - 1
-      )
-    );
+    setQuantity((previous) => Math.max(1, previous - 1));
   };
 
   // ==========================================
@@ -439,44 +329,45 @@ const CakeDetails = () => {
       return;
     }
 
-    if (!selectedSize) {
-      alert(
-        "Please select a cake size."
-      );
+    if (!selectedSizeData) {
+      alert("Please select a cake size.");
 
       return;
     }
 
-    if (
-      Array.isArray(cake.colors) &&
-      cake.colors.length > 0 &&
-      !selectedColor
-    ) {
-      alert(
-        "Please select a cake color."
-      );
+    if (cake.colors.length > 0 && !selectedColorData) {
+      alert("Please select a cake color.");
 
       return;
     }
 
     addToCart({
+      // Cake
       id: cake.id,
+      cake_id: cake.id,
 
       name: cake.name,
 
-      category:
-        cake.category,
+      category: cake.category,
 
-      image:
-        activeImage ||
-        cake.image,
+      image: activeImage || cake.image,
 
-      selectedSize,
+      // Size
+      size_id: selectedSizeData.id,
 
-      selectedColor,
+      selectedSizeId: selectedSizeData.id,
 
-      price:
-        selectedPrice,
+      selectedSize: selectedSizeData.name,
+
+      // Color
+      color_id: selectedColorData?.id || null,
+
+      selectedColorId: selectedColorData?.id || null,
+
+      selectedColor: selectedColorData?.name || "",
+
+      // Price
+      price: selectedPrice,
 
       quantity,
     });
@@ -489,6 +380,24 @@ const CakeDetails = () => {
   };
 
   // ==========================================
+  // LOADING
+  // ==========================================
+
+  if (loading) {
+    return (
+      <section className="cake-details-not-found">
+        <div className="container">
+          <span>LOADING</span>
+
+          <h1>Preparing something sweet...</h1>
+
+          <p>Loading cake details.</p>
+        </div>
+      </section>
+    );
+  }
+
+  // ==========================================
   // NOT FOUND
   // ==========================================
 
@@ -496,26 +405,17 @@ const CakeDetails = () => {
     return (
       <section className="cake-details-not-found">
         <div className="container">
-          <span>
-            CAKE NOT FOUND
-          </span>
+          <span>CAKE NOT FOUND</span>
 
-          <h1>
-            This cake is unavailable.
-          </h1>
+          <h1>This cake is unavailable.</h1>
 
           <p>
-            The cake may have been
-            removed or is currently
-            inactive.
+            {error ||
+              "The cake may have been removed or is currently inactive."}
           </p>
 
-          <Link
-            to="/cakes"
-            className="primary-button"
-          >
+          <Link to="/cakes" className="primary-button">
             <ArrowLeft size={16} />
-
             Back to Cakes
           </Link>
         </div>
@@ -526,54 +426,35 @@ const CakeDetails = () => {
   return (
     <div className="cake-details-page">
       <div className="container">
-        {/* ==================================
-            BREADCRUMB
-        ================================== */}
+        {/* BREADCRUMB */}
 
         <div className="cake-details-breadcrumb">
-          <Link to="/">
-            Home
-          </Link>
+          <Link to="/">Home</Link>
 
           <span>/</span>
 
-          <Link to="/cakes">
-            Cakes
-          </Link>
+          <Link to="/cakes">Cakes</Link>
 
           <span>/</span>
 
-          <strong>
-            {cake.name}
-          </strong>
+          <strong>{cake.name}</strong>
         </div>
 
-        {/* ==================================
-            MAIN SECTION
-        ================================== */}
+        {/* MAIN */}
 
         <section className="cake-details-main">
-          {/* ==================================
-              LEFT - GALLERY
-          ================================== */}
+          {/* GALLERY */}
 
           <div className="cake-details-gallery">
             <div className="cake-details-main-image">
               {activeImage ? (
-                <img
-                  src={activeImage}
-                  alt={cake.name}
-                />
+                <img src={activeImage} alt={cake.name} />
               ) : (
-                <div className="cake-details-no-image">
-                  No Image
-                </div>
+                <div className="cake-details-no-image">No Image</div>
               )}
 
               {cake.featured && (
-                <span className="cake-details-featured">
-                  Featured
-                </span>
+                <span className="cake-details-featured">Featured</span>
               )}
 
               {cakeImages.length > 1 && (
@@ -581,36 +462,23 @@ const CakeDetails = () => {
                   <button
                     type="button"
                     className="cake-gallery-arrow cake-gallery-arrow-left"
-                    onClick={
-                      showPreviousImage
-                    }
+                    onClick={showPreviousImage}
                     aria-label="Previous image"
                   >
-                    <ChevronLeft
-                      size={20}
-                    />
+                    <ChevronLeft size={20} />
                   </button>
 
                   <button
                     type="button"
                     className="cake-gallery-arrow cake-gallery-arrow-right"
-                    onClick={
-                      showNextImage
-                    }
+                    onClick={showNextImage}
                     aria-label="Next image"
                   >
-                    <ChevronRight
-                      size={20}
-                    />
+                    <ChevronRight size={20} />
                   </button>
 
                   <div className="cake-image-counter">
-                    {currentImageIndex +
-                      1}{" "}
-                    /{" "}
-                    {
-                      cakeImages.length
-                    }
+                    {currentImageIndex + 1} / {cakeImages.length}
                   </div>
                 </>
               )}
@@ -620,339 +488,189 @@ const CakeDetails = () => {
 
             {cakeImages.length > 1 && (
               <div className="cake-details-thumbnails">
-                {cakeImages.map(
-                  (
-                    image,
-                    index
-                  ) => (
-                    <button
-                      type="button"
-                      key={`${image}-${index}`}
-                      className={`cake-thumbnail ${
-                        activeImage ===
-                        image
-                          ? "active"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        setActiveImage(
-                          image
-                        )
-                      }
-                    >
-                      <img
-                        src={image}
-                        alt={`${cake.name} ${
-                          index + 1
-                        }`}
-                      />
-                    </button>
-                  )
-                )}
+                {cakeImages.map((image, index) => (
+                  <button
+                    type="button"
+                    key={`${image}-${index}`}
+                    className={`cake-thumbnail ${
+                      activeImage === image ? "active" : ""
+                    }`}
+                    onClick={() => setActiveImage(image)}
+                  >
+                    <img src={image} alt={`${cake.name} ${index + 1}`} />
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          {/* ==================================
-              RIGHT - INFORMATION
-          ================================== */}
+          {/* INFORMATION */}
 
           <div className="cake-details-info">
-            <span className="cake-details-category">
-              {cake.category}
-            </span>
+            <span className="cake-details-category">{cake.category}</span>
 
-            <h1>
-              {cake.name}
-            </h1>
+            <h1>{cake.name}</h1>
 
             <div className="cake-details-price">
-              Rs.{" "}
-              {selectedPrice.toLocaleString()}
+              Rs. {selectedPrice.toLocaleString()}
             </div>
 
-            <p className="cake-details-description">
-              {cake.description}
-            </p>
+            <p className="cake-details-description">{cake.description}</p>
 
             <div className="cake-details-divider" />
 
-            {/* ==================================
-                SIZE
-            ================================== */}
+            {/* SIZE */}
 
             <div className="cake-option-section">
               <div className="cake-option-heading">
                 <div>
-                  <span>
-                    SELECT SIZE
-                  </span>
+                  <span>SELECT SIZE</span>
 
-                  <strong>
-                    {selectedSize ||
-                      "Choose a size"}
-                  </strong>
+                  <strong>{selectedSizeData?.name || "Choose a size"}</strong>
                 </div>
               </div>
 
               <div className="cake-size-options">
-                {cake.sizes?.map(
-                  (
-                    item,
-                    index
-                  ) => {
-                    const active =
-                      selectedSize ===
-                      item.size;
+                {cake.sizes.map((item) => {
+                  const active = Number(selectedSizeId) === Number(item.id);
+
+                  return (
+                    <button
+                      type="button"
+                      key={item.id}
+                      className={`cake-size-option ${active ? "active" : ""}`}
+                      onClick={() => setSelectedSizeId(item.id)}
+                    >
+                      <span>{item.name}</span>
+
+                      <small>Rs. {Number(item.price).toLocaleString()}</small>
+
+                      {active && <Check size={14} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* COLORS */}
+
+            {cake.colors.length > 0 && (
+              <div className="cake-option-section">
+                <div className="cake-option-heading">
+                  <div>
+                    <span>SELECT COLOR</span>
+
+                    <strong>
+                      {selectedColorData?.name || "Choose a color"}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="cake-color-options">
+                  {cake.colors.map((color) => {
+                    const active = Number(selectedColorId) === Number(color.id);
 
                     return (
                       <button
                         type="button"
-                        key={`${item.size}-${index}`}
-                        className={`cake-size-option ${
-                          active
-                            ? "active"
-                            : ""
+                        key={color.id}
+                        className={`cake-color-option ${
+                          active ? "active" : ""
                         }`}
-                        onClick={() =>
-                          setSelectedSize(
-                            item.size
-                          )
-                        }
+                        onClick={() => setSelectedColorId(color.id)}
                       >
-                        <span>
-                          {item.size}
-                        </span>
+                        {active && <Check size={13} />}
 
-                        <small>
-                          Rs.{" "}
-                          {Number(
-                            item.price
-                          ).toLocaleString()}
-                        </small>
-
-                        {active && (
-                          <Check
-                            size={14}
-                          />
-                        )}
+                        {color.name}
                       </button>
                     );
-                  }
-                )}
-              </div>
-            </div>
-
-            {/* ==================================
-                COLORS
-            ================================== */}
-
-            {Array.isArray(
-              cake.colors
-            ) &&
-              cake.colors.length >
-                0 && (
-                <div className="cake-option-section">
-                  <div className="cake-option-heading">
-                    <div>
-                      <span>
-                        SELECT COLOR
-                      </span>
-
-                      <strong>
-                        {selectedColor}
-                      </strong>
-                    </div>
-                  </div>
-
-                  <div className="cake-color-options">
-                    {cake.colors.map(
-                      (
-                        color,
-                        index
-                      ) => {
-                        const active =
-                          selectedColor ===
-                          color;
-
-                        return (
-                          <button
-                            type="button"
-                            key={`${color}-${index}`}
-                            className={`cake-color-option ${
-                              active
-                                ? "active"
-                                : ""
-                            }`}
-                            onClick={() =>
-                              setSelectedColor(
-                                color
-                              )
-                            }
-                          >
-                            {active && (
-                              <Check
-                                size={13}
-                              />
-                            )}
-
-                            {
-                              color
-                            }
-                          </button>
-                        );
-                      }
-                    )}
-                  </div>
+                  })}
                 </div>
-              )}
+              </div>
+            )}
 
-            {/* ==================================
-                QUANTITY
-            ================================== */}
+            {/* QUANTITY */}
 
             <div className="cake-option-section">
               <div className="cake-option-heading">
                 <div>
-                  <span>
-                    QUANTITY
-                  </span>
+                  <span>QUANTITY</span>
 
-                  <strong>
-                    {quantity}
-                  </strong>
+                  <strong>{quantity}</strong>
                 </div>
               </div>
 
               <div className="cake-quantity-control">
                 <button
                   type="button"
-                  onClick={
-                    decreaseQuantity
-                  }
-                  disabled={
-                    quantity === 1
-                  }
+                  onClick={decreaseQuantity}
+                  disabled={quantity === 1}
                 >
                   <Minus size={16} />
                 </button>
 
-                <span>
-                  {quantity}
-                </span>
+                <span>{quantity}</span>
 
-                <button
-                  type="button"
-                  onClick={
-                    increaseQuantity
-                  }
-                >
+                <button type="button" onClick={increaseQuantity}>
                   <Plus size={16} />
                 </button>
               </div>
             </div>
 
-            {/* ==================================
-                TOTAL
-            ================================== */}
+            {/* TOTAL */}
 
             <div className="cake-details-total">
-              <span>
-                Total
-              </span>
+              <span>Total</span>
 
-              <strong>
-                Rs.{" "}
-                {totalPrice.toLocaleString()}
-              </strong>
+              <strong>Rs. {totalPrice.toLocaleString()}</strong>
             </div>
 
-            {/* ==================================
-                ADD TO CART
-            ================================== */}
+            {/* ADD TO CART */}
 
             <button
               type="button"
               className="cake-add-cart-button"
-              onClick={
-                handleAddToCart
-              }
+              onClick={handleAddToCart}
             >
-              <ShoppingBag
-                size={18}
-              />
-
+              <ShoppingBag size={18} />
               Add to Cart
-
-              <span>
-                Rs.{" "}
-                {totalPrice.toLocaleString()}
-              </span>
+              <span>Rs. {totalPrice.toLocaleString()}</span>
             </button>
-
-            {/* SUCCESS MESSAGE */}
 
             {addedMessage && (
               <div className="cake-added-message">
                 <Check size={15} />
-
-                Added to your cart
-                successfully.
+                Added to your cart successfully.
               </div>
             )}
 
-            {/* ==================================
-                INFO
-            ================================== */}
+            {/* INFO */}
 
             <div className="cake-details-extra-info">
               <div>
-                <span>
-                  FRESHLY MADE
-                </span>
+                <span>FRESHLY MADE</span>
 
-                <p>
-                  Every cake is
-                  prepared fresh for
-                  your order.
-                </p>
+                <p>Every cake is prepared fresh for your order.</p>
               </div>
 
               <div>
-                <span>
-                  CUSTOM DETAILS
-                </span>
+                <span>CUSTOM DETAILS</span>
 
-                <p>
-                  Add special
-                  instructions during
-                  checkout.
-                </p>
+                <p>Add special instructions during checkout.</p>
               </div>
 
               <div>
-                <span>
-                  HANDCRAFTED
-                </span>
+                <span>HANDCRAFTED</span>
 
-                <p>
-                  Carefully finished
-                  by hand for your
-                  celebration.
-                </p>
+                <p>Carefully finished by hand for your celebration.</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ==================================
-            BACK
-        ================================== */}
-
         <div className="cake-details-back">
           <Link to="/cakes">
             <ArrowLeft size={15} />
-
             Continue Shopping
           </Link>
         </div>

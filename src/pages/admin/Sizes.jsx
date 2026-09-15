@@ -1,75 +1,155 @@
-import { useMemo, useState } from "react";
+
+
+
+
+import { useEffect, useMemo, useState } from "react";
 import {
   Edit3,
   Plus,
   Search,
-  Trash2,
   X,
+  LoaderCircle,
 } from "lucide-react";
 
+const API_BASE =
+  "https://coreops.pk/cakes/api/Sizes";
+
 const Sizes = () => {
-  const [sizes, setSizes] = useState(() => {
-    try {
-      const saved = localStorage.getItem("cakeSizes");
-
-      if (saved) {
-        return JSON.parse(saved);
-      }
-
-      const initial = [
-        {
-          id: 1,
-          name: "1 lb",
-          status: "Active",
-        },
-        {
-          id: 2,
-          name: "2 lb",
-          status: "Active",
-        },
-        {
-          id: 3,
-          name: "3 lb",
-          status: "Active",
-        },
-      ];
-
-      localStorage.setItem(
-        "cakeSizes",
-        JSON.stringify(initial)
-      );
-
-      return initial;
-    } catch {
-      return [];
-    }
-  });
+  const [sizes, setSizes] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
+
   const [modalOpen, setModalOpen] = useState(false);
+
   const [editingSize, setEditingSize] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
     status: "Active",
   });
 
-  const saveSizes = (updated) => {
-    setSizes(updated);
+  // ==========================================
+  // GET ALL SIZES FROM DATABASE
+  // ==========================================
 
-    localStorage.setItem(
-      "cakeSizes",
-      JSON.stringify(updated)
-    );
+  const fetchSizes = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(
+        `${API_BASE}/getAll.php`,
+        {
+          method: "GET",
+        }
+      );
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      if (
+        !response.ok ||
+        result.status !== "success"
+      ) {
+        throw new Error(
+          result.message ||
+            "Unable to fetch sizes."
+        );
+      }
+
+      // Supports:
+      // { status, data: [...] }
+      // OR
+      // { status, sizes: [...] }
+
+      const apiSizes = Array.isArray(result.data)
+        ? result.data
+        : Array.isArray(result.sizes)
+        ? result.sizes
+        : [];
+
+      const formattedSizes = apiSizes.map(
+        (size) => ({
+          id: Number(size.id),
+
+          name: size.name || "",
+
+          status:
+            size.status || "Active",
+
+          sort_order: Number(
+            size.sort_order || 0
+          ),
+
+          created_at:
+            size.created_at || null,
+
+          updated_at:
+            size.updated_at || null,
+        })
+      );
+
+      setSizes(formattedSizes);
+    } catch (err) {
+      console.error(
+        "Fetch sizes error:",
+        err
+      );
+
+      setSizes([]);
+
+      setError(
+        err.message ||
+          "Unable to load sizes."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // ==========================================
+  // LOAD SIZES
+  // ==========================================
+
+  useEffect(() => {
+    fetchSizes();
+  }, []);
+
+  // ==========================================
+  // FILTER SIZES
+  // ==========================================
+
   const filteredSizes = useMemo(() => {
+    const search =
+      searchTerm.trim().toLowerCase();
+
+    if (!search) {
+      return sizes;
+    }
+
     return sizes.filter((size) =>
       size.name
         .toLowerCase()
-        .includes(searchTerm.toLowerCase())
+        .includes(search)
     );
   }, [sizes, searchTerm]);
+
+  // ==========================================
+  // RESET FORM
+  // ==========================================
 
   const resetForm = () => {
     setFormData({
@@ -80,107 +160,294 @@ const Sizes = () => {
     setEditingSize(null);
   };
 
+  // ==========================================
+  // OPEN ADD MODAL
+  // ==========================================
+
   const openAddModal = () => {
     resetForm();
+
+    setError("");
+    setSuccess("");
+
     setModalOpen(true);
   };
+
+  // ==========================================
+  // OPEN EDIT MODAL
+  // ==========================================
 
   const openEditModal = (size) => {
     setEditingSize(size);
 
     setFormData({
-      name: size.name,
-      status: size.status,
+      name: size.name || "",
+      status: size.status || "Active",
     });
+
+    setError("");
+    setSuccess("");
 
     setModalOpen(true);
   };
 
+  // ==========================================
+  // CLOSE MODAL
+  // ==========================================
+
   const closeModal = () => {
-    setModalOpen(false);
-    resetForm();
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-
-    if (!formData.name.trim()) {
-      alert("Size name is required.");
+    if (saving) {
       return;
     }
 
+    setModalOpen(false);
+
+    resetForm();
+
+    setError("");
+  };
+
+  // ==========================================
+  // ADD / UPDATE SIZE
+  // ==========================================
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    setError("");
+    setSuccess("");
+
+    const cleanName =
+      formData.name.trim();
+
+    // ========================================
+    // VALIDATION
+    // ========================================
+
+    if (!cleanName) {
+      setError("Size name is required.");
+      return;
+    }
+
+    // Frontend duplicate check
     const duplicate = sizes.some(
       (size) =>
-        size.name.toLowerCase() ===
-          formData.name.trim().toLowerCase() &&
-        size.id !== editingSize?.id
+        size.name
+          .trim()
+          .toLowerCase() ===
+          cleanName.toLowerCase() &&
+        Number(size.id) !==
+          Number(editingSize?.id || 0)
     );
 
     if (duplicate) {
-      alert("This size already exists.");
+      setError(
+        "This size already exists."
+      );
       return;
     }
 
-    if (editingSize) {
-      const updated = sizes.map((size) =>
-        size.id === editingSize.id
-          ? {
-              ...size,
-              name: formData.name.trim(),
-              status: formData.status,
-            }
-          : size
-      );
+    try {
+      setSaving(true);
 
-      saveSizes(updated);
-    } else {
-      const newSize = {
-        id: Date.now(),
-        name: formData.name.trim(),
+      const isEditing =
+        Boolean(editingSize);
+
+      const endpoint = isEditing
+        ? `${API_BASE}/update.php`
+        : `${API_BASE}/add.php`;
+
+      // ========================================
+      // REQUEST BODY
+      // ========================================
+
+      const requestBody = {
+        name: cleanName,
+
         status: formData.status,
+
+        sort_order: isEditing
+          ? Number(
+              editingSize.sort_order || 0
+            )
+          : 0,
       };
 
-      saveSizes([
-        newSize,
-        ...sizes,
-      ]);
+      if (isEditing) {
+        requestBody.id =
+          Number(editingSize.id);
+      }
+
+      // ========================================
+      // API CALL
+      // ========================================
+
+      const response = await fetch(
+        endpoint,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify(
+            requestBody
+          ),
+        }
+      );
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      if (
+        !response.ok ||
+        result.status !== "success"
+      ) {
+        throw new Error(
+          result.message ||
+            (isEditing
+              ? "Unable to update size."
+              : "Unable to add size.")
+        );
+      }
+
+      // ========================================
+      // SUCCESS
+      // ========================================
+
+      setModalOpen(false);
+
+      resetForm();
+
+      setSuccess(
+        isEditing
+          ? "Size updated successfully."
+          : "Size added successfully."
+      );
+
+      // Get fresh data from database
+      await fetchSizes();
+
+      // Notify other frontend pages
+      window.dispatchEvent(
+        new Event("sizesChanged")
+      );
+    } catch (err) {
+      console.error(
+        "Save size error:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Unable to save size."
+      );
+    } finally {
+      setSaving(false);
     }
-
-    closeModal();
   };
 
-  const toggleStatus = (id) => {
-    const updated = sizes.map((size) =>
-      size.id === id
-        ? {
-            ...size,
-            status:
-              size.status === "Active"
-                ? "Inactive"
-                : "Active",
-          }
-        : size
-    );
+  // ==========================================
+  // ACTIVE / INACTIVE
+  // Uses update.php
+  // ==========================================
 
-    saveSizes(updated);
+  const toggleStatus = async (size) => {
+    const newStatus =
+      size.status === "Active"
+        ? "Inactive"
+        : "Active";
+
+    try {
+      setError("");
+      setSuccess("");
+
+      const response = await fetch(
+        `${API_BASE}/update.php`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            id: Number(size.id),
+
+            name: size.name,
+
+            status: newStatus,
+
+            sort_order: Number(
+              size.sort_order || 0
+            ),
+          }),
+        }
+      );
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      if (
+        !response.ok ||
+        result.status !== "success"
+      ) {
+        throw new Error(
+          result.message ||
+            "Unable to update size status."
+        );
+      }
+
+      setSuccess(
+        `Size set to ${newStatus}.`
+      );
+
+      // Refresh database data
+      await fetchSizes();
+
+      window.dispatchEvent(
+        new Event("sizesChanged")
+      );
+    } catch (err) {
+      console.error(
+        "Size status error:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Unable to update size status."
+      );
+    }
   };
 
-  const deleteSize = (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this size?"
-    );
-
-    if (!confirmed) return;
-
-    saveSizes(
-      sizes.filter(
-        (size) => size.id !== id
-      )
-    );
-  };
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
     <div>
+      {/* ======================================
+          PAGE HEADING
+      ====================================== */}
+
       <div className="admin-page-heading admin-master-heading">
         <div>
           <span>PRODUCT SETTINGS</span>
@@ -197,11 +464,54 @@ const Sizes = () => {
           type="button"
           className="admin-primary-button"
           onClick={openAddModal}
+          disabled={loading}
         >
           <Plus size={17} />
           Add Size
         </button>
       </div>
+
+      {/* ======================================
+          SUCCESS MESSAGE
+      ====================================== */}
+
+      {success && !modalOpen && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            border:
+              "1px solid var(--border)",
+            background:
+              "var(--background-soft)",
+          }}
+        >
+          {success}
+        </div>
+      )}
+
+      {/* ======================================
+          ERROR MESSAGE
+      ====================================== */}
+
+      {error && !modalOpen && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            border:
+              "1px solid var(--border)",
+            background:
+              "var(--background-soft)",
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* ======================================
+          TOOLBAR
+      ====================================== */}
 
       <div className="admin-master-toolbar">
         <div className="admin-master-search">
@@ -212,7 +522,9 @@ const Sizes = () => {
             placeholder="Search sizes..."
             value={searchTerm}
             onChange={(event) =>
-              setSearchTerm(event.target.value)
+              setSearchTerm(
+                event.target.value
+              )
             }
           />
         </div>
@@ -222,75 +534,124 @@ const Sizes = () => {
         </span>
       </div>
 
+      {/* ======================================
+          TABLE
+      ====================================== */}
+
       <div className="admin-master-table-wrapper">
-        <table className="admin-master-table">
-          <thead>
-            <tr>
-              <th>Size</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+        {loading ? (
+          <div
+            style={{
+              minHeight: "220px",
+              display: "grid",
+              placeItems: "center",
+              textAlign: "center",
+            }}
+          >
+            <div>
+              <LoaderCircle size={28} />
 
-          <tbody>
-            {filteredSizes.map((size) => (
-              <tr key={size.id}>
-                <td>
-                  <strong>{size.name}</strong>
-                </td>
-
-                <td>
-                  <span
-                    className={
-                      size.status === "Active"
-                        ? "admin-master-status active"
-                        : "admin-master-status inactive"
-                    }
-                  >
-                    {size.status}
-                  </span>
-                </td>
-
-                <td>
-                  <div className="admin-master-actions">
-                    <button
-                      type="button"
-                      className="admin-category-status-button"
-                      onClick={() =>
-                        toggleStatus(size.id)
-                      }
-                    >
-                      {size.status === "Active"
-                        ? "Set Inactive"
-                        : "Set Active"}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="admin-category-icon-button"
-                      onClick={() =>
-                        openEditModal(size)
-                      }
-                    >
-                      <Edit3 size={16} />
-                    </button>
-
-                    <button
-                      type="button"
-                      className="admin-category-icon-button delete"
-                      onClick={() =>
-                        deleteSize(size.id)
-                      }
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+              <p>
+                Loading sizes from database...
+              </p>
+            </div>
+          </div>
+        ) : (
+          <table className="admin-master-table">
+            <thead>
+              <tr>
+                <th>Size</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {filteredSizes.length ===
+              0 ? (
+                <tr>
+                  <td
+                    colSpan="3"
+                    style={{
+                      textAlign: "center",
+                      padding: "35px",
+                    }}
+                  >
+                    No sizes found.
+                  </td>
+                </tr>
+              ) : (
+                filteredSizes.map(
+                  (size) => (
+                    <tr key={size.id}>
+                      <td>
+                        <strong>
+                          {size.name}
+                        </strong>
+                      </td>
+
+                      <td>
+                        <span
+                          className={
+                            size.status ===
+                            "Active"
+                              ? "admin-master-status active"
+                              : "admin-master-status inactive"
+                          }
+                        >
+                          {size.status}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="admin-master-actions">
+                          {/* STATUS */}
+
+                          <button
+                            type="button"
+                            className="admin-category-status-button"
+                            onClick={() =>
+                              toggleStatus(
+                                size
+                              )
+                            }
+                          >
+                            {size.status ===
+                            "Active"
+                              ? "Set Inactive"
+                              : "Set Active"}
+                          </button>
+
+                          {/* EDIT */}
+
+                          <button
+                            type="button"
+                            className="admin-category-icon-button"
+                            onClick={() =>
+                              openEditModal(
+                                size
+                              )
+                            }
+                            aria-label="Edit size"
+                          >
+                            <Edit3
+                              size={16}
+                            />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                )
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
+
+      {/* ======================================
+          ADD / EDIT MODAL
+      ====================================== */}
 
       {modalOpen && (
         <div
@@ -321,6 +682,7 @@ const Sizes = () => {
               <button
                 type="button"
                 onClick={closeModal}
+                disabled={saving}
               >
                 <X size={18} />
               </button>
@@ -330,6 +692,23 @@ const Sizes = () => {
               className="admin-category-form"
               onSubmit={handleSubmit}
             >
+              {/* MODAL ERROR */}
+
+              {error && (
+                <div
+                  style={{
+                    marginBottom: "15px",
+                    padding: "11px 13px",
+                    border:
+                      "1px solid var(--border)",
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+
+              {/* SIZE NAME */}
+
               <div className="admin-category-form-group">
                 <label>Size Name</label>
 
@@ -337,25 +716,39 @@ const Sizes = () => {
                   type="text"
                   placeholder="e.g. 4 lb"
                   value={formData.name}
+                  disabled={saving}
                   onChange={(event) =>
-                    setFormData((previous) => ({
-                      ...previous,
-                      name: event.target.value,
-                    }))
+                    setFormData(
+                      (previous) => ({
+                        ...previous,
+
+                        name:
+                          event.target
+                            .value,
+                      })
+                    )
                   }
                 />
               </div>
+
+              {/* STATUS */}
 
               <div className="admin-category-form-group">
                 <label>Status</label>
 
                 <select
                   value={formData.status}
+                  disabled={saving}
                   onChange={(event) =>
-                    setFormData((previous) => ({
-                      ...previous,
-                      status: event.target.value,
-                    }))
+                    setFormData(
+                      (previous) => ({
+                        ...previous,
+
+                        status:
+                          event.target
+                            .value,
+                      })
+                    )
                   }
                 >
                   <option value="Active">
@@ -368,11 +761,14 @@ const Sizes = () => {
                 </select>
               </div>
 
+              {/* ACTIONS */}
+
               <div className="admin-category-modal-actions">
                 <button
                   type="button"
                   className="admin-secondary-button"
                   onClick={closeModal}
+                  disabled={saving}
                 >
                   Cancel
                 </button>
@@ -380,10 +776,21 @@ const Sizes = () => {
                 <button
                   type="submit"
                   className="admin-primary-button"
+                  disabled={saving}
                 >
-                  {editingSize
-                    ? "Save Changes"
-                    : "Add Size"}
+                  {saving ? (
+                    <>
+                      <LoaderCircle
+                        size={16}
+                      />
+
+                      Saving...
+                    </>
+                  ) : editingSize ? (
+                    "Save Changes"
+                  ) : (
+                    "Add Size"
+                  )}
                 </button>
               </div>
             </form>

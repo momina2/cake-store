@@ -253,7 +253,7 @@
   white-space: nowrap;
 }
 
-.hero-content > p {
+.hero-content>p {
   max-width: 520px;
 
   font-size: 15px;
@@ -325,7 +325,7 @@
   overflow: hidden;
 }
 
-.hero-image-main > img {
+.hero-image-main>img {
   width: 100%;
   height: 100%;
 
@@ -346,7 +346,7 @@
   backdrop-filter: blur(10px);
 }
 
-.hero-floating-card > span {
+.hero-floating-card>span {
   display: block;
 
   font-size: 9px;
@@ -360,7 +360,7 @@
   margin-bottom: 4px;
 }
 
-.hero-floating-card > strong {
+.hero-floating-card>strong {
   display: block;
 
   font-family: var(--serif);
@@ -545,11 +545,9 @@
   position: absolute;
   inset: 0;
 
-  background: linear-gradient(
-    to top,
-    rgba(37, 25, 19, 0.68),
-    rgba(37, 25, 19, 0.02) 65%
-  );
+  background: linear-gradient(to top,
+      rgba(37, 25, 19, 0.68),
+      rgba(37, 25, 19, 0.02) 65%);
 }
 
 .category-content {
@@ -1014,7 +1012,7 @@
   margin-bottom: 20px;
 }
 
-.footer-brand-column > p {
+.footer-brand-column>p {
   max-width: 300px;
 
   color: #b8aaa2;
@@ -2207,6 +2205,7 @@
     grid-template-columns: 1fr;
   }
 }
+
 /* ===============================
    CART PAGE
 ================================ */
@@ -2533,7 +2532,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-.cart-summary-lines > div {
+.cart-summary-lines>div {
   display: flex;
 
   justify-content: space-between;
@@ -2761,6 +2760,7 @@
     padding: 25px 20px;
   }
 }
+
 /* ===============================
    CHECKOUT
 ================================ */
@@ -2851,7 +2851,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-.checkout-card-heading > span {
+.checkout-card-heading>span {
   width: 34px;
   height: 34px;
 
@@ -3124,7 +3124,7 @@
   font-style: italic;
 }
 
-.checkout-summary-item > strong {
+.checkout-summary-item>strong {
   white-space: nowrap;
 
   font-size: 10px;
@@ -3143,7 +3143,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-.checkout-price-breakdown > div {
+.checkout-price-breakdown>div {
   display: flex;
 
   justify-content: space-between;
@@ -3777,7 +3777,7 @@
   font-style: italic;
 }
 
-.order-detail-item > strong {
+.order-detail-item>strong {
   font-size: 11px;
   font-weight: 500;
 
@@ -4023,7 +4023,7 @@
     height: 90px;
   }
 
-  .order-detail-item > strong {
+  .order-detail-item>strong {
     grid-column: 2;
   }
 
@@ -4035,6 +4035,7 @@
     grid-column: auto;
   }
 }
+
 /* ===============================
    LOGIN / REGISTER
 ================================ */
@@ -4074,11 +4075,9 @@
   inset: 0;
 
   background:
-    linear-gradient(
-      to top,
+    linear-gradient(to top,
       rgba(38, 26, 20, 0.62),
-      rgba(38, 26, 20, 0.05)
-    );
+      rgba(38, 26, 20, 0.05));
 }
 
 .auth-image-content {
@@ -4091,7 +4090,7 @@
   color: white;
 }
 
-.auth-image-content > span {
+.auth-image-content>span {
   display: block;
 
   margin-bottom: 13px;
@@ -4210,7 +4209,7 @@
   border-color: var(--accent);
 }
 
-.auth-input > svg {
+.auth-input>svg {
   flex-shrink: 0;
 
   color: #9f928a;
@@ -4476,7 +4475,7 @@
   background: var(--border);
 }
 
-.navbar-user-dropdown > a,
+.navbar-user-dropdown>a,
 .navbar-logout-button {
   width: 100%;
 
@@ -4502,7 +4501,7 @@
   transition: 0.2s ease;
 }
 
-.navbar-user-dropdown > a:hover {
+.navbar-user-dropdown>a:hover {
   background: var(--background-soft);
 
   color: var(--text);
@@ -4525,5 +4524,60 @@
 
   .navbar-user-dropdown {
     right: -45px;
+  }
+}
+
+/* =========================================
+   ADMIN PORTAL NAVBAR BUTTON
+========================================= */
+
+.admin-portal-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  height: 38px;
+  padding: 0 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 999px;
+
+  background: var(--background-soft);
+  color: var(--accent-dark);
+
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+
+  text-decoration: none;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.admin-portal-button:hover {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+  color: var(--white);
+
+  transform: translateY(-1px);
+}
+
+/* MOBILE */
+
+@media (max-width: 768px) {
+  .admin-portal-button {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+  }
+
+  .admin-portal-button span {
+    display: none;
   }
 }

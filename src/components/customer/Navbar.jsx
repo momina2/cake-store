@@ -7,19 +7,24 @@ import {
   User,
   X,
   Package,
+  ShieldCheck,
 } from "lucide-react";
+
 import { useEffect, useRef, useState } from "react";
+
 import { useCart } from "../../context/CartContext";
 
 const Navbar = () => {
   const navigate = useNavigate();
 
   const [menuOpen, setMenuOpen] = useState(false);
+
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const [loggedInUser, setLoggedInUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem("loggedInCakeUser");
+
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
@@ -30,76 +35,62 @@ const Navbar = () => {
 
   const { cartCount } = useCart();
 
+  // ==========================================
+  // CUSTOMER LOGIN CHANGE
+  // ==========================================
+
   useEffect(() => {
     const handleStorageChange = () => {
       try {
-        const savedUser = localStorage.getItem(
-          "loggedInCakeUser"
-        );
+        const savedUser = localStorage.getItem("loggedInCakeUser");
 
-        setLoggedInUser(
-          savedUser ? JSON.parse(savedUser) : null
-        );
+        setLoggedInUser(savedUser ? JSON.parse(savedUser) : null);
       } catch {
         setLoggedInUser(null);
       }
     };
 
-    window.addEventListener(
-      "cakeUserChanged",
-      handleStorageChange
-    );
+    window.addEventListener("cakeUserChanged", handleStorageChange);
 
-    window.addEventListener(
-      "storage",
-      handleStorageChange
-    );
+    window.addEventListener("storage", handleStorageChange);
 
     return () => {
-      window.removeEventListener(
-        "cakeUserChanged",
-        handleStorageChange
-      );
+      window.removeEventListener("cakeUserChanged", handleStorageChange);
 
-      window.removeEventListener(
-        "storage",
-        handleStorageChange
-      );
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 
+  // ==========================================
+  // CLOSE USER MENU ON OUTSIDE CLICK
+  // ==========================================
+
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        userMenuRef.current &&
-        !userMenuRef.current.contains(event.target)
-      ) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setUserMenuOpen(false);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside
-    );
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // ==========================================
+  // CUSTOMER LOGOUT
+  // ==========================================
 
   const handleLogout = () => {
     localStorage.removeItem("loggedInCakeUser");
 
     setLoggedInUser(null);
+
     setUserMenuOpen(false);
 
-    window.dispatchEvent(
-      new Event("cakeUserChanged")
-    );
+    window.dispatchEvent(new Event("cakeUserChanged"));
 
     navigate("/");
   };
@@ -107,82 +98,69 @@ const Navbar = () => {
   return (
     <header className="navbar-wrapper">
       <div className="navbar container">
-        <Link to="/" className="brand">
-          <span className="brand-small">
-            HANDCRAFTED
-          </span>
+        {/* BRAND */}
 
-          <span className="brand-main">
-            Maison Cake
-          </span>
+        <Link to="/" className="brand">
+          <span className="brand-small">HANDCRAFTED</span>
+
+          <span className="brand-main">Maison Cake</span>
         </Link>
 
-        <nav
-          className={`nav-links ${
-            menuOpen ? "nav-open" : ""
-          }`}
-        >
-          <NavLink
-            to="/"
-            onClick={() => setMenuOpen(false)}
-          >
+        {/* NAVIGATION */}
+
+        <nav className={`nav-links ${menuOpen ? "nav-open" : ""}`}>
+          <NavLink to="/" onClick={() => setMenuOpen(false)}>
             Home
           </NavLink>
 
-          <NavLink
-            to="/cakes"
-            onClick={() => setMenuOpen(false)}
-          >
+          <NavLink to="/cakes" onClick={() => setMenuOpen(false)}>
             Shop Cakes
           </NavLink>
 
-          <a
-            href="/#categories"
-            onClick={() => setMenuOpen(false)}
-          >
-            Collections
-          </a>
-
-          <a
-            href="/#about"
-            onClick={() => setMenuOpen(false)}
-          >
+          <a href="/#about" onClick={() => setMenuOpen(false)}>
             Our Story
           </a>
         </nav>
 
+        {/* ACTIONS */}
+
         <div className="nav-actions">
-          {/* USER */}
+          {/* ================================
+              ADMIN PORTAL
+          ================================= */}
+
+          <Link
+            to="/admin/login"
+            className="admin-portal-button"
+            title="Admin Portal"
+          >
+            <ShieldCheck size={16} strokeWidth={1.8} />
+
+            <span>Admin Portal</span>
+          </Link>
+
+          {/* ================================
+              CUSTOMER
+          ================================= */}
 
           {!loggedInUser ? (
             <Link
               to="/login"
               className="nav-icon"
-              aria-label="Login"
+              aria-label="Customer Login"
+              title="Customer Login"
             >
-              <User
-                size={20}
-                strokeWidth={1.7}
-              />
+              <User size={20} strokeWidth={1.7} />
             </Link>
           ) : (
-            <div
-              className="navbar-user"
-              ref={userMenuRef}
-            >
+            <div className="navbar-user" ref={userMenuRef}>
               <button
                 type="button"
                 className="navbar-user-button"
-                onClick={() =>
-                  setUserMenuOpen(
-                    (previous) => !previous
-                  )
-                }
+                onClick={() => setUserMenuOpen((previous) => !previous)}
               >
                 <div className="navbar-user-avatar">
-                  {loggedInUser.name
-                    ?.charAt(0)
-                    .toUpperCase() || "U"}
+                  {loggedInUser.name?.charAt(0).toUpperCase() || "U"}
                 </div>
 
                 <span className="navbar-user-name">
@@ -191,36 +169,22 @@ const Navbar = () => {
 
                 <ChevronDown
                   size={14}
-                  className={
-                    userMenuOpen
-                      ? "user-arrow-open"
-                      : ""
-                  }
+                  className={userMenuOpen ? "user-arrow-open" : ""}
                 />
               </button>
 
               {userMenuOpen && (
                 <div className="navbar-user-dropdown">
                   <div className="navbar-user-info">
-                    <strong>
-                      {loggedInUser.name}
-                    </strong>
+                    <strong>{loggedInUser.name}</strong>
 
-                    <span>
-                      {loggedInUser.email}
-                    </span>
+                    <span>{loggedInUser.email}</span>
                   </div>
 
-                  <div className="navbar-dropdown-divider"></div>
+                  <div className="navbar-dropdown-divider" />
 
-                  <Link
-                    to="/my-orders"
-                    onClick={() =>
-                      setUserMenuOpen(false)
-                    }
-                  >
+                  <Link to="/my-orders" onClick={() => setUserMenuOpen(false)}>
                     <Package size={16} />
-
                     My Orders
                   </Link>
 
@@ -230,7 +194,6 @@ const Navbar = () => {
                     className="navbar-logout-button"
                   >
                     <LogOut size={16} />
-
                     Logout
                   </button>
                 </div>
@@ -238,40 +201,35 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* CART */}
+          {/* ================================
+              CART
+          ================================= */}
 
           <Link
             to="/cart"
             className="nav-icon cart-nav-icon"
+            aria-label="Shopping Cart"
           >
-            <ShoppingBag
-              size={21}
-              strokeWidth={1.7}
-            />
+            <ShoppingBag size={21} strokeWidth={1.7} />
 
             {cartCount > 0 && (
               <span className="cart-badge">
-                {cartCount > 9
-                  ? "9+"
-                  : cartCount}
+                {cartCount > 9 ? "9+" : cartCount}
               </span>
             )}
           </Link>
 
+          {/* ================================
+              MOBILE MENU
+          ================================= */}
+
           <button
             type="button"
             className="mobile-menu-button"
-            onClick={() =>
-              setMenuOpen(
-                (previous) => !previous
-              )
-            }
+            onClick={() => setMenuOpen((previous) => !previous)}
+            aria-label="Toggle menu"
           >
-            {menuOpen ? (
-              <X size={23} />
-            ) : (
-              <Menu size={23} />
-            )}
+            {menuOpen ? <X size={23} /> : <Menu size={23} />}
           </button>
         </div>
       </div>

@@ -1,56 +1,31 @@
-import { useMemo, useState } from "react";
+
+
+import { useEffect, useMemo, useState } from "react";
 import {
   Edit3,
   Plus,
   Search,
-  Trash2,
   X,
+  LoaderCircle,
 } from "lucide-react";
 
+const API_BASE =
+  "https://coreops.pk/cakes/api/Colors";
+
 const Colors = () => {
-  const [colors, setColors] = useState(() => {
-    try {
-      const saved = localStorage.getItem("cakeColors");
-
-      if (saved) {
-        return JSON.parse(saved);
-      }
-
-      const initial = [
-        {
-          id: 1,
-          name: "White",
-          hex: "#ffffff",
-          status: "Active",
-        },
-        {
-          id: 2,
-          name: "Pink",
-          hex: "#e9b7c3",
-          status: "Active",
-        },
-        {
-          id: 3,
-          name: "Chocolate",
-          hex: "#6b4436",
-          status: "Active",
-        },
-      ];
-
-      localStorage.setItem(
-        "cakeColors",
-        JSON.stringify(initial)
-      );
-
-      return initial;
-    } catch {
-      return [];
-    }
-  });
+  const [colors, setColors] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
+
   const [modalOpen, setModalOpen] = useState(false);
+
   const [editingColor, setEditingColor] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -58,22 +33,129 @@ const Colors = () => {
     status: "Active",
   });
 
+  // ==========================================
+  // GET ALL COLORS FROM DATABASE
+  // ==========================================
+
+  const fetchColors = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(
+        `${API_BASE}/getAll.php`,
+        {
+          method: "GET",
+        }
+      );
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      if (
+        !response.ok ||
+        result.status !== "success"
+      ) {
+        throw new Error(
+          result.message ||
+            "Unable to fetch colors."
+        );
+      }
+
+      // Supports:
+      // { status, data: [...] }
+      // OR
+      // { status, colors: [...] }
+
+      const apiColors = Array.isArray(result.data)
+        ? result.data
+        : Array.isArray(result.colors)
+        ? result.colors
+        : [];
+
+      const formattedColors = apiColors.map(
+        (color) => ({
+          id: Number(color.id),
+
+          name: color.name || "",
+
+          // Database = hex_code
+          // Frontend = hex
+          hex:
+            color.hex_code ||
+            color.hex ||
+            "#ffffff",
+
+          status:
+            color.status || "Active",
+
+          sort_order: Number(
+            color.sort_order || 0
+          ),
+
+          created_at:
+            color.created_at || null,
+
+          updated_at:
+            color.updated_at || null,
+        })
+      );
+
+      setColors(formattedColors);
+    } catch (err) {
+      console.error(
+        "Fetch colors error:",
+        err
+      );
+
+      setColors([]);
+
+      setError(
+        err.message ||
+          "Unable to load colors."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==========================================
+  // LOAD COLORS
+  // ==========================================
+
+  useEffect(() => {
+    fetchColors();
+  }, []);
+
+  // ==========================================
+  // FILTER COLORS
+  // ==========================================
+
   const filteredColors = useMemo(() => {
+    const search =
+      searchTerm.trim().toLowerCase();
+
+    if (!search) {
+      return colors;
+    }
+
     return colors.filter((color) =>
       color.name
         .toLowerCase()
-        .includes(searchTerm.toLowerCase())
+        .includes(search)
     );
   }, [colors, searchTerm]);
 
-  const saveColors = (updated) => {
-    setColors(updated);
-
-    localStorage.setItem(
-      "cakeColors",
-      JSON.stringify(updated)
-    );
-  };
+  // ==========================================
+  // RESET FORM
+  // ==========================================
 
   const resetForm = () => {
     setEditingColor(null);
@@ -85,108 +167,319 @@ const Colors = () => {
     });
   };
 
+  // ==========================================
+  // OPEN ADD MODAL
+  // ==========================================
+
   const openAddModal = () => {
     resetForm();
+
+    setError("");
+    setSuccess("");
+
     setModalOpen(true);
   };
+
+  // ==========================================
+  // OPEN EDIT MODAL
+  // ==========================================
 
   const openEditModal = (color) => {
     setEditingColor(color);
 
     setFormData({
-      name: color.name,
+      name: color.name || "",
       hex: color.hex || "#ffffff",
-      status: color.status,
+      status:
+        color.status || "Active",
     });
+
+    setError("");
+    setSuccess("");
 
     setModalOpen(true);
   };
 
+  // ==========================================
+  // CLOSE MODAL
+  // ==========================================
+
   const closeModal = () => {
+    if (saving) {
+      return;
+    }
+
     setModalOpen(false);
+
     resetForm();
+
+    setError("");
   };
 
-  const handleSubmit = (event) => {
+  // ==========================================
+  // VALID HEX COLOR
+  // ==========================================
+
+  const isValidHex = (value) => {
+    return /^#[0-9A-Fa-f]{6}$/.test(value);
+  };
+
+  // ==========================================
+  // ADD / UPDATE COLOR
+  // ==========================================
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!formData.name.trim()) {
-      alert("Color name is required.");
+    setError("");
+    setSuccess("");
+
+    const cleanName =
+      formData.name.trim();
+
+    const cleanHex =
+      formData.hex.trim().toUpperCase();
+
+    // ========================================
+    // VALIDATION
+    // ========================================
+
+    if (!cleanName) {
+      setError(
+        "Color name is required."
+      );
+      return;
+    }
+
+    if (!isValidHex(cleanHex)) {
+      setError(
+        "Please enter a valid hex color, for example #FFFFFF."
+      );
       return;
     }
 
     const duplicate = colors.some(
       (color) =>
-        color.name.toLowerCase() ===
-          formData.name.trim().toLowerCase() &&
-        color.id !== editingColor?.id
+        color.name
+          .trim()
+          .toLowerCase() ===
+          cleanName.toLowerCase() &&
+        Number(color.id) !==
+          Number(editingColor?.id || 0)
     );
 
     if (duplicate) {
-      alert("This color already exists.");
-      return;
-    }
-
-    if (editingColor) {
-      saveColors(
-        colors.map((color) =>
-          color.id === editingColor.id
-            ? {
-                ...color,
-                ...formData,
-                name: formData.name.trim(),
-              }
-            : color
-        )
+      setError(
+        "This color already exists."
       );
-    } else {
-      saveColors([
-        {
-          id: Date.now(),
-          ...formData,
-          name: formData.name.trim(),
-        },
-        ...colors,
-      ]);
-    }
-
-    closeModal();
-  };
-
-  const toggleStatus = (id) => {
-    saveColors(
-      colors.map((color) =>
-        color.id === id
-          ? {
-              ...color,
-              status:
-                color.status === "Active"
-                  ? "Inactive"
-                  : "Active",
-            }
-          : color
-      )
-    );
-  };
-
-  const deleteColor = (id) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this color?"
-      )
-    ) {
       return;
     }
 
-    saveColors(
-      colors.filter(
-        (color) => color.id !== id
-      )
-    );
+    try {
+      setSaving(true);
+
+      const isEditing =
+        Boolean(editingColor);
+
+      const endpoint = isEditing
+        ? `${API_BASE}/update.php`
+        : `${API_BASE}/add.php`;
+
+      // ========================================
+      // API REQUEST BODY
+      // ========================================
+
+      const requestBody = {
+        name: cleanName,
+
+        hex_code: cleanHex,
+
+        status: formData.status,
+
+        sort_order: isEditing
+          ? Number(
+              editingColor.sort_order || 0
+            )
+          : 0,
+      };
+
+      if (isEditing) {
+        requestBody.id =
+          Number(editingColor.id);
+      }
+
+      // ========================================
+      // API CALL
+      // ========================================
+
+      const response = await fetch(
+        endpoint,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify(
+            requestBody
+          ),
+        }
+      );
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      if (
+        !response.ok ||
+        result.status !== "success"
+      ) {
+        throw new Error(
+          result.message ||
+            (isEditing
+              ? "Unable to update color."
+              : "Unable to add color.")
+        );
+      }
+
+      // ========================================
+      // SUCCESS
+      // ========================================
+
+      setModalOpen(false);
+
+      resetForm();
+
+      setSuccess(
+        isEditing
+          ? "Color updated successfully."
+          : "Color added successfully."
+      );
+
+      // Fresh DB data
+      await fetchColors();
+
+      // Notify other pages
+      window.dispatchEvent(
+        new Event("colorsChanged")
+      );
+    } catch (err) {
+      console.error(
+        "Save color error:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Unable to save color."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
+
+  // ==========================================
+  // SET ACTIVE / INACTIVE
+  // Uses update.php
+  // ==========================================
+
+  const toggleStatus = async (color) => {
+    const newStatus =
+      color.status === "Active"
+        ? "Inactive"
+        : "Active";
+
+    try {
+      setError("");
+      setSuccess("");
+
+      const response = await fetch(
+        `${API_BASE}/update.php`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            id: Number(color.id),
+
+            name: color.name,
+
+            hex_code:
+              color.hex || "#FFFFFF",
+
+            status: newStatus,
+
+            sort_order: Number(
+              color.sort_order || 0
+            ),
+          }),
+        }
+      );
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      if (
+        !response.ok ||
+        result.status !== "success"
+      ) {
+        throw new Error(
+          result.message ||
+            "Unable to update color status."
+        );
+      }
+
+      setSuccess(
+        `Color set to ${newStatus}.`
+      );
+
+      await fetchColors();
+
+      window.dispatchEvent(
+        new Event("colorsChanged")
+      );
+    } catch (err) {
+      console.error(
+        "Color status error:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Unable to update color status."
+      );
+    }
+  };
+
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
     <div>
+      {/* ======================================
+          PAGE HEADING
+      ====================================== */}
+
       <div className="admin-page-heading admin-master-heading">
         <div>
           <span>PRODUCT SETTINGS</span>
@@ -202,11 +495,54 @@ const Colors = () => {
           type="button"
           className="admin-primary-button"
           onClick={openAddModal}
+          disabled={loading}
         >
           <Plus size={17} />
           Add Color
         </button>
       </div>
+
+      {/* ======================================
+          SUCCESS
+      ====================================== */}
+
+      {success && !modalOpen && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            border:
+              "1px solid var(--border)",
+            background:
+              "var(--background-soft)",
+          }}
+        >
+          {success}
+        </div>
+      )}
+
+      {/* ======================================
+          ERROR
+      ====================================== */}
+
+      {error && !modalOpen && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            border:
+              "1px solid var(--border)",
+            background:
+              "var(--background-soft)",
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* ======================================
+          TOOLBAR
+      ====================================== */}
 
       <div className="admin-master-toolbar">
         <div className="admin-master-search">
@@ -217,7 +553,9 @@ const Colors = () => {
             placeholder="Search colors..."
             value={searchTerm}
             onChange={(event) =>
-              setSearchTerm(event.target.value)
+              setSearchTerm(
+                event.target.value
+              )
             }
           />
         </div>
@@ -227,92 +565,141 @@ const Colors = () => {
         </span>
       </div>
 
+      {/* ======================================
+          TABLE
+      ====================================== */}
+
       <div className="admin-master-table-wrapper">
-        <table className="admin-master-table">
-          <thead>
-            <tr>
-              <th>Color</th>
-              <th>Preview</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+        {loading ? (
+          <div
+            style={{
+              minHeight: "220px",
+              display: "grid",
+              placeItems: "center",
+              textAlign: "center",
+            }}
+          >
+            <div>
+              <LoaderCircle size={28} />
 
-          <tbody>
-            {filteredColors.map((color) => (
-              <tr key={color.id}>
-                <td>
-                  <strong>{color.name}</strong>
-                </td>
-
-                <td>
-                  <div className="admin-color-preview-row">
-                    <span
-                      className="admin-color-dot"
-                      style={{
-                        backgroundColor:
-                          color.hex,
-                      }}
-                    />
-
-                    <span>
-                      {color.hex}
-                    </span>
-                  </div>
-                </td>
-
-                <td>
-                  <span
-                    className={
-                      color.status === "Active"
-                        ? "admin-master-status active"
-                        : "admin-master-status inactive"
-                    }
-                  >
-                    {color.status}
-                  </span>
-                </td>
-
-                <td>
-                  <div className="admin-master-actions">
-                    <button
-                      type="button"
-                      className="admin-category-status-button"
-                      onClick={() =>
-                        toggleStatus(color.id)
-                      }
-                    >
-                      {color.status === "Active"
-                        ? "Set Inactive"
-                        : "Set Active"}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="admin-category-icon-button"
-                      onClick={() =>
-                        openEditModal(color)
-                      }
-                    >
-                      <Edit3 size={16} />
-                    </button>
-
-                    <button
-                      type="button"
-                      className="admin-category-icon-button delete"
-                      onClick={() =>
-                        deleteColor(color.id)
-                      }
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+              <p>
+                Loading colors from database...
+              </p>
+            </div>
+          </div>
+        ) : (
+          <table className="admin-master-table">
+            <thead>
+              <tr>
+                <th>Color</th>
+                <th>Preview</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {filteredColors.length ===
+              0 ? (
+                <tr>
+                  <td
+                    colSpan="4"
+                    style={{
+                      textAlign: "center",
+                      padding: "35px",
+                    }}
+                  >
+                    No colors found.
+                  </td>
+                </tr>
+              ) : (
+                filteredColors.map(
+                  (color) => (
+                    <tr key={color.id}>
+                      <td>
+                        <strong>
+                          {color.name}
+                        </strong>
+                      </td>
+
+                      <td>
+                        <div className="admin-color-preview-row">
+                          <span
+                            className="admin-color-dot"
+                            style={{
+                              backgroundColor:
+                                color.hex,
+                            }}
+                          />
+
+                          <span>
+                            {color.hex}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td>
+                        <span
+                          className={
+                            color.status ===
+                            "Active"
+                              ? "admin-master-status active"
+                              : "admin-master-status inactive"
+                          }
+                        >
+                          {color.status}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="admin-master-actions">
+                          {/* STATUS */}
+
+                          <button
+                            type="button"
+                            className="admin-category-status-button"
+                            onClick={() =>
+                              toggleStatus(
+                                color
+                              )
+                            }
+                          >
+                            {color.status ===
+                            "Active"
+                              ? "Set Inactive"
+                              : "Set Active"}
+                          </button>
+
+                          {/* EDIT */}
+
+                          <button
+                            type="button"
+                            className="admin-category-icon-button"
+                            onClick={() =>
+                              openEditModal(
+                                color
+                              )
+                            }
+                            aria-label="Edit color"
+                          >
+                            <Edit3
+                              size={16}
+                            />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                )
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
+
+      {/* ======================================
+          ADD / EDIT MODAL
+      ====================================== */}
 
       {modalOpen && (
         <div
@@ -343,6 +730,7 @@ const Colors = () => {
               <button
                 type="button"
                 onClick={closeModal}
+                disabled={saving}
               >
                 <X size={18} />
               </button>
@@ -352,21 +740,48 @@ const Colors = () => {
               className="admin-category-form"
               onSubmit={handleSubmit}
             >
+              {/* MODAL ERROR */}
+
+              {error && (
+                <div
+                  style={{
+                    marginBottom: "15px",
+                    padding: "11px 13px",
+                    border:
+                      "1px solid var(--border)",
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+
+              {/* COLOR NAME */}
+
               <div className="admin-category-form-group">
-                <label>Color Name</label>
+                <label>
+                  Color Name
+                </label>
 
                 <input
                   type="text"
                   placeholder="e.g. Sage Green"
                   value={formData.name}
+                  disabled={saving}
                   onChange={(event) =>
-                    setFormData((previous) => ({
-                      ...previous,
-                      name: event.target.value,
-                    }))
+                    setFormData(
+                      (previous) => ({
+                        ...previous,
+
+                        name:
+                          event.target
+                            .value,
+                      })
+                    )
                   }
                 />
               </div>
+
+              {/* COLOR PICKER */}
 
               <div className="admin-category-form-group">
                 <label>Color</label>
@@ -374,38 +789,66 @@ const Colors = () => {
                 <div className="admin-color-picker-field">
                   <input
                     type="color"
-                    value={formData.hex}
+                    value={
+                      isValidHex(
+                        formData.hex
+                      )
+                        ? formData.hex
+                        : "#ffffff"
+                    }
+                    disabled={saving}
                     onChange={(event) =>
-                      setFormData((previous) => ({
-                        ...previous,
-                        hex: event.target.value,
-                      }))
+                      setFormData(
+                        (previous) => ({
+                          ...previous,
+
+                          hex:
+                            event.target
+                              .value,
+                        })
+                      )
                     }
                   />
 
                   <input
                     type="text"
                     value={formData.hex}
+                    placeholder="#FFFFFF"
+                    maxLength={7}
+                    disabled={saving}
                     onChange={(event) =>
-                      setFormData((previous) => ({
-                        ...previous,
-                        hex: event.target.value,
-                      }))
+                      setFormData(
+                        (previous) => ({
+                          ...previous,
+
+                          hex:
+                            event.target
+                              .value,
+                        })
+                      )
                     }
                   />
                 </div>
               </div>
+
+              {/* STATUS */}
 
               <div className="admin-category-form-group">
                 <label>Status</label>
 
                 <select
                   value={formData.status}
+                  disabled={saving}
                   onChange={(event) =>
-                    setFormData((previous) => ({
-                      ...previous,
-                      status: event.target.value,
-                    }))
+                    setFormData(
+                      (previous) => ({
+                        ...previous,
+
+                        status:
+                          event.target
+                            .value,
+                      })
+                    )
                   }
                 >
                   <option value="Active">
@@ -418,11 +861,14 @@ const Colors = () => {
                 </select>
               </div>
 
+              {/* ACTIONS */}
+
               <div className="admin-category-modal-actions">
                 <button
                   type="button"
                   className="admin-secondary-button"
                   onClick={closeModal}
+                  disabled={saving}
                 >
                   Cancel
                 </button>
@@ -430,10 +876,20 @@ const Colors = () => {
                 <button
                   type="submit"
                   className="admin-primary-button"
+                  disabled={saving}
                 >
-                  {editingColor
-                    ? "Save Changes"
-                    : "Add Color"}
+                  {saving ? (
+                    <>
+                      <LoaderCircle
+                        size={16}
+                      />
+                      Saving...
+                    </>
+                  ) : editingColor ? (
+                    "Save Changes"
+                  ) : (
+                    "Add Color"
+                  )}
                 </button>
               </div>
             </form>

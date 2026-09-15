@@ -1,44 +1,33 @@
-import { useMemo, useState } from "react";
+
+
+
+import { useEffect, useMemo, useState } from "react";
 import {
   Edit3,
   Plus,
   Search,
-  Trash2,
   X,
+  LoaderCircle,
 } from "lucide-react";
 
-import { categories as defaultCategories } from "../../data/categories";
+const API_BASE =
+  "https://coreops.pk/cakes/api/Categories";
 
 const Categories = () => {
-  const [categories, setCategories] = useState(() => {
-    try {
-      const saved = localStorage.getItem("cakeCategories");
-
-      if (saved) {
-        return JSON.parse(saved);
-      }
-
-      const initial = defaultCategories.map((item) => ({
-        ...item,
-        status: "Active",
-      }));
-
-      localStorage.setItem(
-        "cakeCategories",
-        JSON.stringify(initial)
-      );
-
-      return initial;
-    } catch {
-      return [];
-    }
-  });
+  const [categories, setCategories] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);
 
-  const [editingCategory, setEditingCategory] = useState(null);
+  const [editingCategory, setEditingCategory] =
+    useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -46,22 +35,132 @@ const Categories = () => {
     status: "Active",
   });
 
+  // ==========================================
+  // GET ALL CATEGORIES FROM DATABASE
+  // ==========================================
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(
+        `${API_BASE}/getAll.php`,
+        {
+          method: "GET",
+        }
+      );
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      if (
+        !response.ok ||
+        result.status !== "success"
+      ) {
+        throw new Error(
+          result.message ||
+            "Unable to fetch categories."
+        );
+      }
+
+      // Supports common response structures:
+      // { status, data: [...] }
+      // { status, categories: [...] }
+
+      const apiCategories = Array.isArray(result.data)
+        ? result.data
+        : Array.isArray(result.categories)
+        ? result.categories
+        : [];
+
+      const formattedCategories =
+        apiCategories.map((category) => ({
+          id: Number(category.id),
+
+          name: category.name || "",
+
+          slug: category.slug || "",
+
+          description:
+            category.description || "",
+
+          // Database uses image_url.
+          // Existing UI uses image.
+          image:
+            category.image_url ||
+            category.image ||
+            "",
+
+          status:
+            category.status || "Active",
+
+          sort_order: Number(
+            category.sort_order || 0
+          ),
+
+          created_at:
+            category.created_at || null,
+
+          updated_at:
+            category.updated_at || null,
+        }));
+
+      setCategories(formattedCategories);
+    } catch (err) {
+      console.error(
+        "Fetch categories error:",
+        err
+      );
+
+      setCategories([]);
+
+      setError(
+        err.message ||
+          "Unable to load categories."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==========================================
+  // LOAD CATEGORIES
+  // ==========================================
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // ==========================================
+  // FILTER
+  // ==========================================
+
   const filteredCategories = useMemo(() => {
+    const search =
+      searchTerm.trim().toLowerCase();
+
+    if (!search) {
+      return categories;
+    }
+
     return categories.filter((category) =>
       category.name
         .toLowerCase()
-        .includes(searchTerm.toLowerCase())
+        .includes(search)
     );
   }, [categories, searchTerm]);
 
-  const saveCategories = (updated) => {
-    setCategories(updated);
-
-    localStorage.setItem(
-      "cakeCategories",
-      JSON.stringify(updated)
-    );
-  };
+  // ==========================================
+  // RESET FORM
+  // ==========================================
 
   const resetForm = () => {
     setFormData({
@@ -73,29 +172,56 @@ const Categories = () => {
     setEditingCategory(null);
   };
 
+  // ==========================================
+  // OPEN ADD MODAL
+  // ==========================================
+
   const openAddModal = () => {
     resetForm();
 
+    setError("");
+    setSuccess("");
+
     setModalOpen(true);
   };
+
+  // ==========================================
+  // OPEN EDIT MODAL
+  // ==========================================
 
   const openEditModal = (category) => {
     setEditingCategory(category);
 
     setFormData({
-      name: category.name,
-      image: category.image,
-      status: category.status || "Active",
+      name: category.name || "",
+      image: category.image || "",
+      status:
+        category.status || "Active",
     });
+
+    setError("");
+    setSuccess("");
 
     setModalOpen(true);
   };
 
+  // ==========================================
+  // CLOSE MODAL
+  // ==========================================
+
   const closeModal = () => {
+    if (saving) {
+      return;
+    }
+
     setModalOpen(false);
 
     resetForm();
   };
+
+  // ==========================================
+  // FORM CHANGE
+  // ==========================================
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -106,78 +232,260 @@ const Categories = () => {
     }));
   };
 
-  const handleSubmit = (event) => {
+  // ==========================================
+  // ADD / UPDATE CATEGORY
+  // ==========================================
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!formData.name.trim()) {
-      alert("Category name is required.");
-      return;
-    }
+    setError("");
+    setSuccess("");
 
-    if (!formData.image.trim()) {
-      alert("Category image URL is required.");
-      return;
-    }
+    const cleanName =
+      formData.name.trim();
 
-    if (editingCategory) {
-      const updated = categories.map((category) =>
-        category.id === editingCategory.id
-          ? {
-              ...category,
-              name: formData.name,
-              image: formData.image,
-              status: formData.status,
-            }
-          : category
+    const cleanImage =
+      formData.image.trim();
+
+    if (!cleanName) {
+      setError(
+        "Category name is required."
       );
+      return;
+    }
 
-      saveCategories(updated);
-    } else {
-      const newCategory = {
-        id: Date.now(),
-        name: formData.name,
-        image: formData.image,
+    if (!cleanImage) {
+      setError(
+        "Category image URL is required."
+      );
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const isEditing =
+        Boolean(editingCategory);
+
+      const endpoint = isEditing
+        ? `${API_BASE}/update.php`
+        : `${API_BASE}/add.php`;
+
+      // ========================================
+      // REQUEST BODY
+      // ========================================
+
+      const requestBody = {
+        name: cleanName,
+
+        image_url: cleanImage,
+
         status: formData.status,
       };
 
-      saveCategories([
-        newCategory,
-        ...categories,
-      ]);
+      // ========================================
+      // KEEP EXISTING DB VALUES WHILE EDITING
+      // ========================================
+
+      if (isEditing) {
+        requestBody.id =
+          Number(editingCategory.id);
+
+        requestBody.slug =
+          editingCategory.slug || "";
+
+        requestBody.description =
+          editingCategory.description || "";
+
+        requestBody.sort_order =
+          Number(
+            editingCategory.sort_order || 0
+          );
+      } else {
+        requestBody.description = "";
+        requestBody.sort_order = 0;
+      }
+
+      // ========================================
+      // API CALL
+      // ========================================
+
+      const response = await fetch(
+        endpoint,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify(
+            requestBody
+          ),
+        }
+      );
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      if (
+        !response.ok ||
+        result.status !== "success"
+      ) {
+        throw new Error(
+          result.message ||
+            (isEditing
+              ? "Unable to update category."
+              : "Unable to add category.")
+        );
+      }
+
+      // ========================================
+      // SUCCESS
+      // ========================================
+
+      setModalOpen(false);
+
+      resetForm();
+
+      setSuccess(
+        isEditing
+          ? "Category updated successfully."
+          : "Category added successfully."
+      );
+
+      // Reload fresh database data
+      await fetchCategories();
+
+      // Let other same-tab pages know catalog changed
+      window.dispatchEvent(
+        new Event("categoriesChanged")
+      );
+    } catch (err) {
+      console.error(
+        "Save category error:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Unable to save category."
+      );
+    } finally {
+      setSaving(false);
     }
-
-    closeModal();
   };
 
-  const handleDelete = (categoryId) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this category?"
-    );
+  // ==========================================
+  // TOGGLE ACTIVE / INACTIVE
+  // Uses update.php — no separate status API
+  // ==========================================
 
-    if (!confirmed) return;
+  const toggleStatus = async (category) => {
+    const newStatus =
+      category.status === "Active"
+        ? "Inactive"
+        : "Active";
 
-    const updated = categories.filter(
-      (category) => category.id !== categoryId
-    );
+    try {
+      setError("");
+      setSuccess("");
 
-    saveCategories(updated);
+      const response = await fetch(
+        `${API_BASE}/update.php`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            id: Number(category.id),
+
+            name: category.name,
+
+            slug: category.slug || "",
+
+            description:
+              category.description || "",
+
+            image_url:
+              category.image || "",
+
+            status: newStatus,
+
+            sort_order: Number(
+              category.sort_order || 0
+            ),
+          }),
+        }
+      );
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      if (
+        !response.ok ||
+        result.status !== "success"
+      ) {
+        throw new Error(
+          result.message ||
+            "Unable to update category status."
+        );
+      }
+
+      setSuccess(
+        `Category set to ${newStatus}.`
+      );
+
+      await fetchCategories();
+
+      window.dispatchEvent(
+        new Event("categoriesChanged")
+      );
+    } catch (err) {
+      console.error(
+        "Category status error:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Unable to update category status."
+      );
+    }
   };
 
-  const toggleStatus = (categoryId) => {
-    const updated = categories.map((category) =>
-      category.id === categoryId
-        ? {
-            ...category,
-            status:
-              category.status === "Active"
-                ? "Inactive"
-                : "Active",
-          }
-        : category
-    );
+  // ==========================================
+  // IMAGE ERROR
+  // ==========================================
 
-    saveCategories(updated);
+  const handleImageError = (event) => {
+    event.currentTarget.style.display =
+      "none";
   };
+
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
     <div className="admin-categories-page">
@@ -188,7 +496,8 @@ const Categories = () => {
           <h1>Categories</h1>
 
           <p>
-            Organize cakes into beautiful customer-facing collections.
+            Organize cakes into beautiful
+            customer-facing collections.
           </p>
         </div>
 
@@ -196,11 +505,41 @@ const Categories = () => {
           type="button"
           className="admin-primary-button"
           onClick={openAddModal}
+          disabled={loading}
         >
           <Plus size={17} />
           Add Category
         </button>
       </div>
+
+      {/* ======================================
+          MESSAGES
+      ====================================== */}
+
+      {error && !modalOpen && (
+        <div className="admin-category-empty">
+          <p>{error}</p>
+        </div>
+      )}
+
+      {success && !modalOpen && (
+        <div
+          style={{
+            marginBottom: "18px",
+            padding: "12px 16px",
+            border:
+              "1px solid var(--border)",
+            background:
+              "var(--background-soft)",
+          }}
+        >
+          {success}
+        </div>
+      )}
+
+      {/* ======================================
+          TOOLBAR
+      ====================================== */}
 
       <div className="admin-category-toolbar">
         <div className="admin-category-search">
@@ -211,95 +550,140 @@ const Categories = () => {
             placeholder="Search categories..."
             value={searchTerm}
             onChange={(event) =>
-              setSearchTerm(event.target.value)
+              setSearchTerm(
+                event.target.value
+              )
             }
           />
         </div>
 
         <span>
-          {filteredCategories.length} categories
+          {filteredCategories.length}{" "}
+          categories
         </span>
       </div>
 
-      {filteredCategories.length === 0 ? (
+      {/* ======================================
+          LOADING
+      ====================================== */}
+
+      {loading ? (
+        <div className="admin-category-empty">
+          <LoaderCircle size={28} />
+
+          <h3>Loading categories...</h3>
+
+          <p>
+            Fetching categories from the
+            database.
+          </p>
+        </div>
+      ) : filteredCategories.length ===
+        0 ? (
         <div className="admin-category-empty">
           <h3>No categories found.</h3>
 
           <p>
-            Add a new category or change your search.
+            Add a new category or change your
+            search.
           </p>
         </div>
       ) : (
+        /* ====================================
+           CATEGORY GRID
+        ==================================== */
+
         <div className="admin-category-grid">
-          {filteredCategories.map((category) => (
-            <div
-              className="admin-category-card"
-              key={category.id}
-            >
-              <div className="admin-category-image">
-                <img
-                  src={category.image}
-                  alt={category.name}
-                />
+          {filteredCategories.map(
+            (category) => (
+              <div
+                className="admin-category-card"
+                key={category.id}
+              >
+                <div className="admin-category-image">
+                  {category.image ? (
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      onError={
+                        handleImageError
+                      }
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "grid",
+                        placeItems: "center",
+                        background:
+                          "var(--background-soft)",
+                      }}
+                    >
+                      No Image
+                    </div>
+                  )}
 
-                <span
-                  className={
-                    category.status === "Active"
-                      ? "admin-category-status active"
-                      : "admin-category-status inactive"
-                  }
-                >
-                  {category.status}
-                </span>
-              </div>
-
-              <div className="admin-category-card-body">
-                <div>
-                  <span>COLLECTION</span>
-
-                  <h3>{category.name}</h3>
+                  <span
+                    className={
+                      category.status ===
+                      "Active"
+                        ? "admin-category-status active"
+                        : "admin-category-status inactive"
+                    }
+                  >
+                    {category.status}
+                  </span>
                 </div>
 
-                <div className="admin-category-actions">
-                  <button
-                    type="button"
-                    className="admin-category-status-button"
-                    onClick={() =>
-                      toggleStatus(category.id)
-                    }
-                  >
-                    {category.status === "Active"
-                      ? "Set Inactive"
-                      : "Set Active"}
-                  </button>
+                <div className="admin-category-card-body">
+                  <div>
+                    <span>COLLECTION</span>
 
-                  <button
-                    type="button"
-                    className="admin-category-icon-button"
-                    onClick={() =>
-                      openEditModal(category)
-                    }
-                    aria-label="Edit category"
-                  >
-                    <Edit3 size={16} />
-                  </button>
+                    <h3>
+                      {category.name}
+                    </h3>
+                  </div>
 
-                  <button
-                    type="button"
-                    className="admin-category-icon-button delete"
-                    onClick={() =>
-                      handleDelete(category.id)
-                    }
-                    aria-label="Delete category"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="admin-category-actions">
+                    <button
+                      type="button"
+                      className="admin-category-status-button"
+                      onClick={() =>
+                        toggleStatus(
+                          category
+                        )
+                      }
+                    >
+                      {category.status ===
+                      "Active"
+                        ? "Set Inactive"
+                        : "Set Active"}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="admin-category-icon-button"
+                      onClick={() =>
+                        openEditModal(
+                          category
+                        )
+                      }
+                      aria-label="Edit category"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          )}
         </div>
       )}
+
+      {/* ======================================
+          ADD / EDIT MODAL
+      ====================================== */}
 
       {modalOpen && (
         <div
@@ -330,6 +714,7 @@ const Categories = () => {
               <button
                 type="button"
                 onClick={closeModal}
+                disabled={saving}
               >
                 <X size={18} />
               </button>
@@ -339,17 +724,39 @@ const Categories = () => {
               className="admin-category-form"
               onSubmit={handleSubmit}
             >
+              {/* ERROR INSIDE MODAL */}
+
+              {error && (
+                <div
+                  style={{
+                    marginBottom: "15px",
+                    padding: "11px 13px",
+                    border:
+                      "1px solid var(--border)",
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+
+              {/* NAME */}
+
               <div className="admin-category-form-group">
-                <label>Category Name</label>
+                <label>
+                  Category Name
+                </label>
 
                 <input
                   type="text"
                   name="name"
                   placeholder="e.g. Anniversary Cakes"
                   value={formData.name}
+                  disabled={saving}
                   onChange={handleChange}
                 />
               </div>
+
+              {/* IMAGE */}
 
               <div className="admin-category-form-group">
                 <label>Image URL</label>
@@ -359,9 +766,12 @@ const Categories = () => {
                   name="image"
                   placeholder="https://..."
                   value={formData.image}
+                  disabled={saving}
                   onChange={handleChange}
                 />
               </div>
+
+              {/* IMAGE PREVIEW */}
 
               {formData.image && (
                 <div className="admin-category-image-preview">
@@ -372,12 +782,15 @@ const Categories = () => {
                 </div>
               )}
 
+              {/* STATUS */}
+
               <div className="admin-category-form-group">
                 <label>Status</label>
 
                 <select
                   name="status"
                   value={formData.status}
+                  disabled={saving}
                   onChange={handleChange}
                 >
                   <option value="Active">
@@ -390,11 +803,14 @@ const Categories = () => {
                 </select>
               </div>
 
+              {/* ACTIONS */}
+
               <div className="admin-category-modal-actions">
                 <button
                   type="button"
                   className="admin-secondary-button"
                   onClick={closeModal}
+                  disabled={saving}
                 >
                   Cancel
                 </button>
@@ -402,10 +818,20 @@ const Categories = () => {
                 <button
                   type="submit"
                   className="admin-primary-button"
+                  disabled={saving}
                 >
-                  {editingCategory
-                    ? "Save Changes"
-                    : "Add Category"}
+                  {saving ? (
+                    <>
+                      <LoaderCircle
+                        size={16}
+                      />
+                      Saving...
+                    </>
+                  ) : editingCategory ? (
+                    "Save Changes"
+                  ) : (
+                    "Add Category"
+                  )}
                 </button>
               </div>
             </form>

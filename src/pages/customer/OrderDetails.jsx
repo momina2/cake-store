@@ -1,36 +1,913 @@
-import { Link, useParams } from "react-router-dom";
+// import {
+//   useEffect,
+//   useState,
+// } from "react";
+
+// import {
+//   Link,
+//   useNavigate,
+//   useParams,
+// } from "react-router-dom";
+
+// import {
+//   ArrowLeft,
+//   Check,
+//   Clock3,
+//   MapPin,
+//   Package,
+//   LoaderCircle,
+// } from "lucide-react";
+
+// const API_ROOT =
+//   "https://coreops.pk/cakes/api";
+
+// const OrderDetails = () => {
+//   const { id } = useParams();
+
+//   const navigate = useNavigate();
+
+//   const [order, setOrder] =
+//     useState(null);
+
+//   const [loading, setLoading] =
+//     useState(true);
+
+//   const [error, setError] =
+//     useState("");
+
+//   // ==========================================
+//   // STATUSES
+//   // ==========================================
+
+//   const statuses = [
+//     "Pending",
+//     "Confirmed",
+//     "Preparing",
+//     "Ready",
+//     "Out for Delivery",
+//     "Delivered",
+//   ];
+
+//   // ==========================================
+//   // GET CUSTOMER
+//   // ==========================================
+
+//   const getLoggedInCustomer = () => {
+//     try {
+//       const saved =
+//         localStorage.getItem(
+//           "loggedInCakeUser"
+//         );
+
+//       if (!saved) {
+//         return null;
+//       }
+
+//       const customer =
+//         JSON.parse(saved);
+
+//       return customer?.id
+//         ? customer
+//         : null;
+//     } catch {
+//       return null;
+//     }
+//   };
+
+//   // ==========================================
+//   // NORMALIZE ORDER
+//   // ==========================================
+
+//   const normalizeOrder = (
+//     rawOrder
+//   ) => {
+//     const customerSnapshot =
+//       rawOrder.customer_snapshot ||
+//       rawOrder.customer ||
+//       {};
+
+//     const delivery =
+//       rawOrder.delivery || {};
+
+//     const rawItems =
+//       Array.isArray(rawOrder.items)
+//         ? rawOrder.items
+//         : [];
+
+//     const items = rawItems.map(
+//       (item) => ({
+//         id: Number(
+//           item.id || 0
+//         ),
+
+//         cakeId: Number(
+//           item.cake_id || 0
+//         ),
+
+//         name:
+//           item.cake_name ||
+//           item.name ||
+//           "",
+
+//         image:
+//           item.cake_image ||
+//           item.image ||
+//           "",
+
+//         selectedSize:
+//           item.selected_size ||
+//           item.selectedSize ||
+//           "",
+
+//         selectedColor:
+//           item.selected_color ||
+//           item.selectedColor ||
+//           "",
+
+//         price: Number(
+//           item.unit_price ||
+//           item.price ||
+//           0
+//         ),
+
+//         quantity: Number(
+//           item.quantity || 0
+//         ),
+
+//         lineTotal: Number(
+//           item.line_total ||
+//           Number(
+//             item.unit_price ||
+//               item.price ||
+//               0
+//           ) *
+//             Number(
+//               item.quantity || 0
+//             )
+//         ),
+
+//         cakeMessage:
+//           item.special_instructions ||
+//           item.cakeMessage ||
+//           "",
+//       })
+//     );
+
+//     return {
+//       id: Number(
+//         rawOrder.id ||
+//           rawOrder.order_id ||
+//           0
+//       ),
+
+//       orderNumber:
+//         rawOrder.order_number ||
+//         rawOrder.orderNumber ||
+//         "",
+
+//       customer: {
+//         name:
+//           customerSnapshot.name ||
+//           rawOrder.customer_name ||
+//           "",
+
+//         email:
+//           customerSnapshot.email ||
+//           rawOrder.customer_email ||
+//           "",
+
+//         phone:
+//           customerSnapshot.phone ||
+//           rawOrder.customer_phone ||
+//           "",
+//       },
+
+//       delivery: {
+//         address:
+//           delivery.address ||
+//           rawOrder.delivery_address ||
+//           "",
+
+//         city:
+//           delivery.city ||
+//           rawOrder.delivery_city ||
+//           "",
+
+//         date:
+//           delivery.date ||
+//           rawOrder.delivery_date ||
+//           "",
+
+//         time:
+//           delivery.time ||
+//           rawOrder.delivery_time ||
+//           "",
+//       },
+
+//       notes:
+//         rawOrder.notes || "",
+
+//       items,
+
+//       subtotal: Number(
+//         rawOrder.subtotal || 0
+//       ),
+
+//       deliveryCharges:
+//         Number(
+//           rawOrder.delivery_charges ||
+//             rawOrder.deliveryCharges ||
+//             0
+//         ),
+
+//       discount: Number(
+//         rawOrder.discount || 0
+//       ),
+
+//       total: Number(
+//         rawOrder.total || 0
+//       ),
+
+//       paymentMethod:
+//         rawOrder.payment_method ||
+//         "Cash on Delivery",
+
+//       paymentStatus:
+//         rawOrder.payment_status ||
+//         "Pending",
+
+//       status:
+//         rawOrder.status ||
+//         "Pending",
+
+//       createdAt:
+//         rawOrder.placed_at ||
+//         rawOrder.created_at ||
+//         rawOrder.createdAt ||
+//         "",
+
+//       statusHistory:
+//         Array.isArray(
+//           rawOrder.status_history
+//         )
+//           ? rawOrder.status_history
+//           : [],
+//     };
+//   };
+
+//   // ==========================================
+//   // FETCH ORDER
+//   // ==========================================
+
+//   useEffect(() => {
+//     let active = true;
+
+//     const loadOrder = async () => {
+//       const customer =
+//         getLoggedInCustomer();
+
+//       if (!customer) {
+//         setLoading(false);
+
+//         navigate("/login");
+
+//         return;
+//       }
+
+//       const orderId =
+//         Number(id);
+
+//       if (
+//         !Number.isFinite(
+//           orderId
+//         ) ||
+//         orderId <= 0
+//       ) {
+//         setError(
+//           "Invalid order ID."
+//         );
+
+//         setLoading(false);
+
+//         return;
+//       }
+
+//       try {
+//         setLoading(true);
+//         setError("");
+
+//         const response = await fetch(
+//           `${API_ROOT}/Orders/getDetails.php`,
+//           {
+//             method: "POST",
+
+//             headers: {
+//               "Content-Type":
+//                 "application/json",
+//             },
+
+//             body: JSON.stringify({
+//               customer_id: Number(
+//                 customer.id
+//               ),
+
+//               order_id: orderId,
+//             }),
+//           }
+//         );
+
+//         let result;
+
+//         try {
+//           result =
+//             await response.json();
+//         } catch {
+//           throw new Error(
+//             "Server returned an invalid response."
+//           );
+//         }
+
+//         if (
+//           !response.ok ||
+//           result.status !==
+//             "success"
+//         ) {
+//           throw new Error(
+//             result.message ||
+//               "Order not found."
+//           );
+//         }
+
+//         if (!active) {
+//           return;
+//         }
+
+//         const rawOrder =
+//           result.data?.order ||
+//           result.order ||
+//           result.data;
+
+//         if (
+//           !rawOrder ||
+//           typeof rawOrder !==
+//             "object"
+//         ) {
+//           throw new Error(
+//             "Order details were not returned."
+//           );
+//         }
+
+//         setOrder(
+//           normalizeOrder(
+//             rawOrder
+//           )
+//         );
+//       } catch (error) {
+//         console.error(
+//           "Order details error:",
+//           error
+//         );
+
+//         if (active) {
+//           setOrder(null);
+
+//           setError(
+//             error.message ||
+//               "Order not found."
+//           );
+//         }
+//       } finally {
+//         if (active) {
+//           setLoading(false);
+//         }
+//       }
+//     };
+
+//     loadOrder();
+
+//     return () => {
+//       active = false;
+//     };
+//   }, [id, navigate]);
+
+//   // ==========================================
+//   // LOADING
+//   // ==========================================
+
+//   if (loading) {
+//     return (
+//       <section className="order-not-found">
+//         <div>
+//           <LoaderCircle
+//             size={32}
+//           />
+
+//           <h1>
+//             Loading order...
+//           </h1>
+
+//           <p>
+//             Fetching your order
+//             details.
+//           </p>
+//         </div>
+//       </section>
+//     );
+//   }
+
+//   // ==========================================
+//   // NOT FOUND
+//   // ==========================================
+
+//   if (!order) {
+//     return (
+//       <section className="order-not-found">
+//         <div>
+//           <h1>
+//             Order not found.
+//           </h1>
+
+//           {error && (
+//             <p>
+//               {error}
+//             </p>
+//           )}
+
+//           <Link
+//             to="/my-orders"
+//             className="primary-button"
+//           >
+//             View My Orders
+//           </Link>
+//         </div>
+//       </section>
+//     );
+//   }
+
+//   // ==========================================
+//   // TRACKING STATUS
+//   // ==========================================
+
+//   const currentStatusIndex =
+//     statuses.indexOf(
+//       order.status
+//     );
+
+//   const isCancelled =
+//     order.status === "Cancelled";
+
+//   // ==========================================
+//   // UI
+//   // ==========================================
+
+//   return (
+//     <section className="order-details-page">
+//       <div className="container">
+//         <Link
+//           to="/my-orders"
+//           className="order-details-back"
+//         >
+//           <ArrowLeft size={16} />
+//           Back to My Orders
+//         </Link>
+
+//         {/* HEADER */}
+
+//         <div className="order-details-header">
+//           <div>
+//             <span className="section-kicker">
+//               ORDER DETAILS
+//             </span>
+
+//             <h1>
+//               {order.orderNumber ||
+//                 `Order #${order.id}`}
+//             </h1>
+
+//             <p>
+//               Placed on{" "}
+//               {order.createdAt
+//                 ? new Date(
+//                     order.createdAt
+//                   ).toLocaleDateString(
+//                     "en-GB",
+//                     {
+//                       day: "2-digit",
+//                       month: "long",
+//                       year: "numeric",
+//                     }
+//                   )
+//                 : "—"}
+//             </p>
+//           </div>
+
+//           <span
+//             className={`order-status-badge large ${order.status
+//               .toLowerCase()
+//               .replaceAll(
+//                 " ",
+//                 "-"
+//               )}`}
+//           >
+//             {order.status}
+//           </span>
+//         </div>
+
+//         {/* TRACKING */}
+
+//         <div className="order-tracking-card">
+//           <div className="tracking-heading">
+//             <div>
+//               <span className="section-kicker">
+//                 ORDER PROGRESS
+//               </span>
+
+//               <h2>
+//                 Track your order
+//               </h2>
+//             </div>
+
+//             <Clock3
+//               size={21}
+//             />
+//           </div>
+
+//           {isCancelled ? (
+//             <div className="order-notes-box">
+//               <span>
+//                 ORDER CANCELLED
+//               </span>
+
+//               <p>
+//                 This order has been
+//                 cancelled.
+//               </p>
+//             </div>
+//           ) : (
+//             <div className="tracking-progress">
+//               {statuses.map(
+//                 (
+//                   status,
+//                   index
+//                 ) => {
+//                   const completed =
+//                     currentStatusIndex >=
+//                       0 &&
+//                     index <=
+//                       currentStatusIndex;
+
+//                   return (
+//                     <div
+//                       className={`tracking-step ${
+//                         completed
+//                           ? "completed"
+//                           : ""
+//                       }`}
+//                       key={status}
+//                     >
+//                       <div className="tracking-circle">
+//                         {index <
+//                         currentStatusIndex ? (
+//                           <Check
+//                             size={15}
+//                           />
+//                         ) : (
+//                           index + 1
+//                         )}
+//                       </div>
+
+//                       <span>
+//                         {status}
+//                       </span>
+//                     </div>
+//                   );
+//                 }
+//               )}
+//             </div>
+//           )}
+//         </div>
+
+//         {/* CONTENT */}
+
+//         <div className="order-details-layout">
+//           {/* LEFT */}
+
+//           <div className="order-details-main">
+//             {/* ITEMS */}
+
+//             <div className="order-detail-card">
+//               <div className="order-detail-card-heading">
+//                 <Package
+//                   size={19}
+//                 />
+
+//                 <h2>
+//                   Items Ordered
+//                 </h2>
+//               </div>
+
+//               <div className="order-detail-items">
+//                 {order.items.map(
+//                   (
+//                     item,
+//                     index
+//                   ) => (
+//                     <div
+//                       className="order-detail-item"
+//                       key={
+//                         item.id ||
+//                         index
+//                       }
+//                     >
+//                       {item.image ? (
+//                         <img
+//                           src={
+//                             item.image
+//                           }
+//                           alt={
+//                             item.name
+//                           }
+//                         />
+//                       ) : (
+//                         <div className="order-detail-no-image">
+//                           Cake
+//                         </div>
+//                       )}
+
+//                       <div className="order-detail-item-info">
+//                         <h3>
+//                           {item.name}
+//                         </h3>
+
+//                         <p>
+//                           {
+//                             item.selectedSize
+//                           }
+
+//                           {item.selectedColor
+//                             ? ` · ${item.selectedColor}`
+//                             : ""}
+//                         </p>
+
+//                         <span>
+//                           Quantity:{" "}
+//                           {
+//                             item.quantity
+//                           }
+//                         </span>
+
+//                         {item.cakeMessage && (
+//                           <small>
+//                             Cake message:
+//                             {" \""}
+//                             {
+//                               item.cakeMessage
+//                             }
+//                             "
+//                           </small>
+//                         )}
+//                       </div>
+
+//                       <strong>
+//                         Rs.{" "}
+//                         {item.lineTotal.toLocaleString()}
+//                       </strong>
+//                     </div>
+//                   )
+//                 )}
+//               </div>
+//             </div>
+
+//             {/* DELIVERY */}
+
+//             <div className="order-detail-card">
+//               <div className="order-detail-card-heading">
+//                 <MapPin
+//                   size={19}
+//                 />
+
+//                 <h2>
+//                   Delivery Information
+//                 </h2>
+//               </div>
+
+//               <div className="delivery-detail-grid">
+//                 <div>
+//                   <span>
+//                     Customer
+//                   </span>
+
+//                   <strong>
+//                     {order.customer
+//                       .name || "—"}
+//                   </strong>
+//                 </div>
+
+//                 <div>
+//                   <span>
+//                     Phone
+//                   </span>
+
+//                   <strong>
+//                     {order.customer
+//                       .phone || "—"}
+//                   </strong>
+//                 </div>
+
+//                 <div>
+//                   <span>
+//                     Email
+//                   </span>
+
+//                   <strong>
+//                     {order.customer
+//                       .email || "—"}
+//                   </strong>
+//                 </div>
+
+//                 <div>
+//                   <span>
+//                     Delivery Date
+//                   </span>
+
+//                   <strong>
+//                     {order.delivery
+//                       .date || "—"}
+//                   </strong>
+//                 </div>
+
+//                 <div>
+//                   <span>
+//                     Delivery Time
+//                   </span>
+
+//                   <strong>
+//                     {order.delivery
+//                       .time || "—"}
+//                   </strong>
+//                 </div>
+
+//                 <div>
+//                   <span>
+//                     City
+//                   </span>
+
+//                   <strong>
+//                     {order.delivery
+//                       .city || "—"}
+//                   </strong>
+//                 </div>
+
+//                 <div className="delivery-address-full">
+//                   <span>
+//                     Address
+//                   </span>
+
+//                   <strong>
+//                     {order.delivery
+//                       .address || "—"}
+//                   </strong>
+//                 </div>
+//               </div>
+
+//               {order.notes && (
+//                 <div className="order-notes-box">
+//                   <span>
+//                     Additional Notes
+//                   </span>
+
+//                   <p>
+//                     {order.notes}
+//                   </p>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+
+//           {/* RIGHT */}
+
+//           <aside className="order-payment-summary">
+//             <span className="section-kicker">
+//               PAYMENT SUMMARY
+//             </span>
+
+//             <h2>
+//               Order Total
+//             </h2>
+
+//             <div className="order-summary-breakdown">
+//               <div>
+//                 <span>
+//                   Subtotal
+//                 </span>
+
+//                 <strong>
+//                   Rs.{" "}
+//                   {order.subtotal.toLocaleString()}
+//                 </strong>
+//               </div>
+
+//               <div>
+//                 <span>
+//                   Delivery
+//                 </span>
+
+//                 <strong>
+//                   Rs.{" "}
+//                   {order.deliveryCharges.toLocaleString()}
+//                 </strong>
+//               </div>
+
+//               {order.discount >
+//                 0 && (
+//                 <div>
+//                   <span>
+//                     Discount
+//                   </span>
+
+//                   <strong>
+//                     - Rs.{" "}
+//                     {order.discount.toLocaleString()}
+//                   </strong>
+//                 </div>
+//               )}
+//             </div>
+
+//             <div className="order-final-total">
+//               <span>
+//                 Total
+//               </span>
+
+//               <strong>
+//                 Rs.{" "}
+//                 {order.total.toLocaleString()}
+//               </strong>
+//             </div>
+
+//             <div className="payment-method-box">
+//               <span>
+//                 Payment Method
+//               </span>
+
+//               <strong>
+//                 {order.paymentMethod}
+//               </strong>
+//             </div>
+
+//             <div className="payment-method-box">
+//               <span>
+//                 Payment Status
+//               </span>
+
+//               <strong>
+//                 {order.paymentStatus}
+//               </strong>
+//             </div>
+
+//             <Link
+//               to="/cakes"
+//               className="order-more-button"
+//             >
+//               Order More Cakes
+//             </Link>
+//           </aside>
+//         </div>
+//       </div>
+//     </section>
+//   );
+// };
+
+// export default OrderDetails;
+
+import { useEffect, useState } from "react";
+
+import { Link, useNavigate, useParams } from "react-router-dom";
+
 import {
   ArrowLeft,
   Check,
   Clock3,
   MapPin,
   Package,
+  LoaderCircle,
 } from "lucide-react";
+
+const API_ROOT = "https://coreops.pk/cakes/api";
 
 const OrderDetails = () => {
   const { id } = useParams();
 
-  const orders = JSON.parse(
-    localStorage.getItem("cakeOrders") || "[]"
-  );
+  const navigate = useNavigate();
 
-  const order = orders.find(
-    (item) => item.orderId === id
-  );
+  const [order, setOrder] = useState(null);
 
-  if (!order) {
-    return (
-      <section className="order-not-found">
-        <div>
-          <h1>Order not found.</h1>
+  const [loading, setLoading] = useState(true);
 
-          <Link to="/my-orders" className="primary-button">
-            View My Orders
-          </Link>
-        </div>
-      </section>
-    );
-  }
+  const [error, setError] = useState("");
+
+  // ==========================================
+  // STATUSES
+  // ==========================================
 
   const statuses = [
     "Pending",
@@ -41,38 +918,333 @@ const OrderDetails = () => {
     "Delivered",
   ];
 
-  const currentStatusIndex = statuses.indexOf(
-    order.status
-  );
+  // ==========================================
+  // GET CUSTOMER
+  // ==========================================
+
+  const getLoggedInCustomer = () => {
+    try {
+      const saved = localStorage.getItem("loggedInCakeUser");
+
+      if (!saved) {
+        return null;
+      }
+
+      const customer = JSON.parse(saved);
+
+      return customer?.id ? customer : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // ==========================================
+  // NORMALIZE ORDER
+  // ==========================================
+
+  const normalizeOrder = (rawOrder) => {
+    const customerSnapshot =
+      rawOrder.customer_snapshot || rawOrder.customer || {};
+
+    const delivery = rawOrder.delivery || {};
+
+    const rawItems = Array.isArray(rawOrder.items) ? rawOrder.items : [];
+
+    const items = rawItems.map((item) => ({
+      id: Number(item.id || 0),
+
+      cakeId: Number(item.cake_id || 0),
+
+      name: item.cake_name || item.name || "",
+
+      image: item.cake_image || item.image || "",
+
+      selectedSize: item.selected_size || item.selectedSize || "",
+
+      selectedColor: item.selected_color || item.selectedColor || "",
+
+      price: Number(item.unit_price || item.price || 0),
+
+      quantity: Number(item.quantity || 0),
+
+      lineTotal: Number(
+        item.line_total ||
+          Number(item.unit_price || item.price || 0) *
+            Number(item.quantity || 0),
+      ),
+
+      cakeMessage: item.special_instructions || item.cakeMessage || "",
+    }));
+
+    return {
+      id: Number(rawOrder.id || rawOrder.order_id || 0),
+
+      orderNumber: rawOrder.order_number || rawOrder.orderNumber || "",
+
+      customer: {
+        name: customerSnapshot.name || rawOrder.customer_name || "",
+
+        email: customerSnapshot.email || rawOrder.customer_email || "",
+
+        phone: customerSnapshot.phone || rawOrder.customer_phone || "",
+      },
+
+      delivery: {
+        address: delivery.address || rawOrder.delivery_address || "",
+
+        city: delivery.city || rawOrder.delivery_city || "",
+
+        date: delivery.date || rawOrder.delivery_date || "",
+
+        time: delivery.time || rawOrder.delivery_time || "",
+      },
+
+      notes: rawOrder.notes || "",
+
+      items,
+
+      subtotal: Number(rawOrder.subtotal || 0),
+
+      deliveryCharges: Number(
+        rawOrder.delivery_charges || rawOrder.deliveryCharges || 0,
+      ),
+
+      discount: Number(rawOrder.discount || 0),
+
+      total: Number(rawOrder.total || 0),
+
+      paymentMethod: rawOrder.payment_method || "Cash on Delivery",
+
+      paymentStatus: rawOrder.payment_status || "Pending",
+
+      status: rawOrder.status || "Pending",
+
+      createdAt:
+        rawOrder.placed_at || rawOrder.created_at || rawOrder.createdAt || "",
+
+      statusHistory: Array.isArray(rawOrder.status_history)
+        ? rawOrder.status_history
+        : [],
+    };
+  };
+
+  // ==========================================
+  // FETCH ORDER + AUTO REFRESH
+  // ==========================================
+
+  useEffect(() => {
+    let active = true;
+
+    let intervalId = null;
+
+    let firstLoad = true;
+
+    const loadOrder = async (silent = false) => {
+      const customer = getLoggedInCustomer();
+
+      if (!customer) {
+        if (active) {
+          setLoading(false);
+
+          navigate("/login");
+        }
+
+        return;
+      }
+
+      const orderId = Number(id);
+
+      if (!Number.isFinite(orderId) || orderId <= 0) {
+        if (active) {
+          setError("Invalid order ID.");
+
+          setLoading(false);
+        }
+
+        return;
+      }
+
+      try {
+        // Only show loading screen
+        // when page opens initially.
+
+        if (firstLoad && !silent) {
+          setLoading(true);
+          setError("");
+        }
+
+        const response = await fetch(`${API_ROOT}/Orders/getDetails.php`, {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            customer_id: Number(customer.id),
+
+            order_id: orderId,
+          }),
+        });
+
+        let result;
+
+        try {
+          result = await response.json();
+        } catch {
+          throw new Error("Server returned an invalid response.");
+        }
+
+        if (!response.ok || result.status !== "success") {
+          throw new Error(result.message || "Order not found.");
+        }
+
+        if (!active) {
+          return;
+        }
+
+        const rawOrder = result.data?.order || result.order || result.data;
+
+        if (!rawOrder || typeof rawOrder !== "object") {
+          throw new Error("Order details were not returned.");
+        }
+
+        const updatedOrder = normalizeOrder(rawOrder);
+
+        // ======================================
+        // UPDATE SCREEN AUTOMATICALLY
+        // ======================================
+
+        setOrder(updatedOrder);
+
+        setError("");
+      } catch (error) {
+        console.error("Order details error:", error);
+
+        if (!active) {
+          return;
+        }
+
+        // On first load show error.
+        // During background refresh,
+        // keep existing order visible.
+
+        if (firstLoad) {
+          setOrder(null);
+
+          setError(error.message || "Order not found.");
+        }
+      } finally {
+        if (active && firstLoad) {
+          firstLoad = false;
+
+          setLoading(false);
+        }
+      }
+    };
+
+    // ========================================
+    // FIRST LOAD
+    // ========================================
+
+    loadOrder(false);
+
+    // ========================================
+    // AUTO REFRESH EVERY 5 SECONDS
+    // ========================================
+
+    intervalId = window.setInterval(() => {
+      loadOrder(true);
+    }, 5000);
+
+    // ========================================
+    // CLEANUP
+    // ========================================
+
+    return () => {
+      active = false;
+
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [id, navigate]);
+
+  // ==========================================
+  // LOADING
+  // ==========================================
+
+  if (loading) {
+    return (
+      <section className="order-not-found">
+        <div>
+          <LoaderCircle size={32} />
+
+          <h1>Loading order...</h1>
+
+          <p>Fetching your order details.</p>
+        </div>
+      </section>
+    );
+  }
+
+  // ==========================================
+  // NOT FOUND
+  // ==========================================
+
+  if (!order) {
+    return (
+      <section className="order-not-found">
+        <div>
+          <h1>Order not found.</h1>
+
+          {error && <p>{error}</p>}
+
+          <Link to="/my-orders" className="primary-button">
+            View My Orders
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  // ==========================================
+  // TRACKING STATUS
+  // ==========================================
+
+  const currentStatusIndex = statuses.indexOf(order.status);
+
+  const isCancelled = order.status === "Cancelled";
+
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
     <section className="order-details-page">
       <div className="container">
-        <Link
-          to="/my-orders"
-          className="order-details-back"
-        >
+        <Link to="/my-orders" className="order-details-back">
           <ArrowLeft size={16} />
           Back to My Orders
         </Link>
 
+        {/* HEADER */}
+
         <div className="order-details-header">
           <div>
-            <span className="section-kicker">
-              ORDER DETAILS
-            </span>
+            <span className="section-kicker">ORDER DETAILS</span>
 
-            <h1>{order.orderId}</h1>
+            <h1>{order.orderNumber || `Order #${order.id}`}</h1>
 
             <p>
               Placed on{" "}
-              {new Date(
-                order.createdAt
-              ).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
+              {order.createdAt
+                ? new Date(order.createdAt).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                  })
+                : "—"}
             </p>
           </div>
 
@@ -90,9 +1262,7 @@ const OrderDetails = () => {
         <div className="order-tracking-card">
           <div className="tracking-heading">
             <div>
-              <span className="section-kicker">
-                ORDER PROGRESS
-              </span>
+              <span className="section-kicker">ORDER PROGRESS</span>
 
               <h2>Track your order</h2>
             </div>
@@ -100,37 +1270,47 @@ const OrderDetails = () => {
             <Clock3 size={21} />
           </div>
 
-          <div className="tracking-progress">
-            {statuses.map((status, index) => {
-              const completed =
-                index <= currentStatusIndex;
+          {isCancelled ? (
+            <div className="order-notes-box">
+              <span>ORDER CANCELLED</span>
 
-              return (
-                <div
-                  className={`tracking-step ${
-                    completed ? "completed" : ""
-                  }`}
-                  key={status}
-                >
-                  <div className="tracking-circle">
-                    {index < currentStatusIndex ? (
-                      <Check size={15} />
-                    ) : (
-                      index + 1
-                    )}
+              <p>This order has been cancelled.</p>
+            </div>
+          ) : (
+            <div className="tracking-progress">
+              {statuses.map((status, index) => {
+                const completed =
+                  currentStatusIndex >= 0 && index <= currentStatusIndex;
+
+                return (
+                  <div
+                    className={`tracking-step ${completed ? "completed" : ""}`}
+                    key={status}
+                  >
+                    <div className="tracking-circle">
+                      {index < currentStatusIndex ? (
+                        <Check size={15} />
+                      ) : (
+                        index + 1
+                      )}
+                    </div>
+
+                    <span>{status}</span>
                   </div>
-
-                  <span>{status}</span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
+
+        {/* CONTENT */}
 
         <div className="order-details-layout">
           {/* LEFT */}
 
           <div className="order-details-main">
+            {/* ITEMS */}
+
             <div className="order-detail-card">
               <div className="order-detail-card-heading">
                 <Package size={19} />
@@ -140,45 +1320,40 @@ const OrderDetails = () => {
 
               <div className="order-detail-items">
                 {order.items.map((item, index) => (
-                  <div
-                    className="order-detail-item"
-                    key={index}
-                  >
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                    />
+                  <div className="order-detail-item" key={item.id || index}>
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} />
+                    ) : (
+                      <div className="order-detail-no-image">Cake</div>
+                    )}
 
                     <div className="order-detail-item-info">
                       <h3>{item.name}</h3>
 
                       <p>
-                        {item.selectedSize} ·{" "}
-                        {item.selectedColor}
+                        {item.selectedSize}
+
+                        {item.selectedColor ? ` · ${item.selectedColor}` : ""}
                       </p>
 
-                      <span>
-                        Quantity: {item.quantity}
-                      </span>
+                      <span>Quantity: {item.quantity}</span>
 
                       {item.cakeMessage && (
                         <small>
-                          Cake message: "
+                          Cake message:
+                          {' "'}
                           {item.cakeMessage}"
                         </small>
                       )}
                     </div>
 
-                    <strong>
-                      Rs.{" "}
-                      {(
-                        item.price * item.quantity
-                      ).toLocaleString()}
-                    </strong>
+                    <strong>Rs. {item.lineTotal.toLocaleString()}</strong>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* DELIVERY */}
 
             <div className="order-detail-card">
               <div className="order-detail-card-heading">
@@ -191,57 +1366,43 @@ const OrderDetails = () => {
                 <div>
                   <span>Customer</span>
 
-                  <strong>
-                    {order.customer.name}
-                  </strong>
+                  <strong>{order.customer.name || "—"}</strong>
                 </div>
 
                 <div>
                   <span>Phone</span>
 
-                  <strong>
-                    {order.customer.phone}
-                  </strong>
+                  <strong>{order.customer.phone || "—"}</strong>
                 </div>
 
                 <div>
                   <span>Email</span>
 
-                  <strong>
-                    {order.customer.email}
-                  </strong>
+                  <strong>{order.customer.email || "—"}</strong>
                 </div>
 
                 <div>
                   <span>Delivery Date</span>
 
-                  <strong>
-                    {order.delivery.date}
-                  </strong>
+                  <strong>{order.delivery.date || "—"}</strong>
                 </div>
 
                 <div>
                   <span>Delivery Time</span>
 
-                  <strong>
-                    {order.delivery.time}
-                  </strong>
+                  <strong>{order.delivery.time || "—"}</strong>
                 </div>
 
                 <div>
                   <span>City</span>
 
-                  <strong>
-                    {order.delivery.city}
-                  </strong>
+                  <strong>{order.delivery.city || "—"}</strong>
                 </div>
 
                 <div className="delivery-address-full">
                   <span>Address</span>
 
-                  <strong>
-                    {order.delivery.address}
-                  </strong>
+                  <strong>{order.delivery.address || "—"}</strong>
                 </div>
               </div>
 
@@ -258,9 +1419,7 @@ const OrderDetails = () => {
           {/* RIGHT */}
 
           <aside className="order-payment-summary">
-            <span className="section-kicker">
-              PAYMENT SUMMARY
-            </span>
+            <span className="section-kicker">PAYMENT SUMMARY</span>
 
             <h2>Order Total</h2>
 
@@ -268,40 +1427,43 @@ const OrderDetails = () => {
               <div>
                 <span>Subtotal</span>
 
-                <strong>
-                  Rs.{" "}
-                  {order.subtotal.toLocaleString()}
-                </strong>
+                <strong>Rs. {order.subtotal.toLocaleString()}</strong>
               </div>
 
               <div>
                 <span>Delivery</span>
 
-                <strong>
-                  Rs.{" "}
-                  {order.deliveryCharges.toLocaleString()}
-                </strong>
+                <strong>Rs. {order.deliveryCharges.toLocaleString()}</strong>
               </div>
+
+              {order.discount > 0 && (
+                <div>
+                  <span>Discount</span>
+
+                  <strong>- Rs. {order.discount.toLocaleString()}</strong>
+                </div>
+              )}
             </div>
 
             <div className="order-final-total">
               <span>Total</span>
 
-              <strong>
-                Rs. {order.total.toLocaleString()}
-              </strong>
+              <strong>Rs. {order.total.toLocaleString()}</strong>
             </div>
 
             <div className="payment-method-box">
               <span>Payment Method</span>
 
-              <strong>Cash on Delivery</strong>
+              <strong>{order.paymentMethod}</strong>
             </div>
 
-            <Link
-              to="/cakes"
-              className="order-more-button"
-            >
+            <div className="payment-method-box">
+              <span>Payment Status</span>
+
+              <strong>{order.paymentStatus}</strong>
+            </div>
+
+            <Link to="/cakes" className="order-more-button">
               Order More Cakes
             </Link>
           </aside>

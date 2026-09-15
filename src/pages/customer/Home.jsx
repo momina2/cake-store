@@ -1,28 +1,163 @@
+import { useEffect, useState } from "react";
 import { ArrowRight, CakeSlice, Heart, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { getCustomerCategories, getFeaturedCakes } from "../../utils/catalog";
+
 import CategoryCard from "../../components/customer/CategoryCard";
 import CakeCard from "../../components/customer/CakeCard";
-import { useState } from "react";
-;
+
+const API_ROOT = "https://coreops.pk/cakes/api";
 
 const Home = () => {
-  const [categories] = useState(() => getCustomerCategories());
+  const [categories, setCategories] = useState([]);
+  const [featuredCakes, setFeaturedCakes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [featuredCakes] = useState(() => getFeaturedCakes());
+  // ==========================================
+  // NORMALIZE CAKE
+  // ==========================================
+
+  const normalizeCake = (cake) => {
+    const category = typeof cake.category === "object" ? cake.category : null;
+
+    const images = Array.isArray(cake.images)
+      ? cake.images
+          .map((image) =>
+            typeof image === "string"
+              ? image
+              : image.image_url || image.url || "",
+          )
+          .filter(Boolean)
+      : [];
+
+    const sizes = Array.isArray(cake.sizes)
+      ? cake.sizes
+          .filter((size) => !size.status || size.status === "Active")
+          .map((size) => ({
+            id: Number(size.size_id || size.id || 0),
+            size: size.size_name || size.name || size.size || "",
+            name: size.size_name || size.name || size.size || "",
+            price: Number(size.price || 0),
+          }))
+      : [];
+
+    const colors = Array.isArray(cake.colors)
+      ? cake.colors
+          .filter((color) => !color.status || color.status === "Active")
+          .map((color) => ({
+            id: Number(color.color_id || color.id || 0),
+            name: color.color_name || color.name || "",
+            hex: color.hex_code || color.hex || "#ffffff",
+          }))
+      : [];
+
+    return {
+      id: Number(cake.id),
+
+      name: cake.name || "",
+
+      category: category?.name || cake.category_name || cake.category || "",
+
+      categoryId: Number(category?.id || cake.category_id || 0),
+
+      description: cake.description || cake.short_description || "",
+
+      shortDescription: cake.short_description || "",
+
+      image: cake.main_image || cake.image || images[0] || "",
+
+      mainImage: cake.main_image || cake.image || images[0] || "",
+
+      images,
+
+      sizes,
+
+      colors,
+
+      featured: Number(cake.featured) === 1 || cake.featured === true,
+
+      status: cake.status || "Active",
+    };
+  };
+
+  // ==========================================
+  // LOAD HOME DATA
+  // ==========================================
+
+  useEffect(() => {
+    const loadHomeData = async () => {
+      try {
+        setLoading(true);
+
+        const [categoryResponse, cakeResponse] = await Promise.all([
+          fetch(`${API_ROOT}/Categories/getAll.php`),
+          fetch(`${API_ROOT}/Cakes/getAll.php`),
+        ]);
+
+        const categoryResult = await categoryResponse.json();
+
+        const cakeResult = await cakeResponse.json();
+
+        // ======================================
+        // CATEGORIES
+        // ======================================
+
+        const categoryRows = Array.isArray(categoryResult.data)
+          ? categoryResult.data
+          : [];
+
+        const activeCategories = categoryRows
+          .filter((category) => category.status === "Active")
+          .map((category) => ({
+            id: Number(category.id),
+            name: category.name || "",
+            description: category.description || "",
+            image: category.image_url || "",
+            image_url: category.image_url || "",
+            slug: category.slug || "",
+          }));
+
+        setCategories(activeCategories);
+
+        // ======================================
+        // CAKES
+        // ======================================
+
+        const cakeRows = Array.isArray(cakeResult.data) ? cakeResult.data : [];
+
+        const activeCakes = cakeRows
+          .map(normalizeCake)
+          .filter((cake) => cake.status === "Active" && cake.sizes.length > 0);
+
+        const featured = activeCakes.filter((cake) => cake.featured);
+
+        setFeaturedCakes(
+          featured.length > 0 ? featured.slice(0, 4) : activeCakes.slice(0, 4),
+        );
+      } catch (error) {
+        console.error("Home data loading error:", error);
+
+        setCategories([]);
+        setFeaturedCakes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadHomeData();
+  }, []);
 
   return (
     <div>
       {/* ================= HERO ================= */}
 
       <section className="hero-section">
-        <div className="hero-background-shape hero-shape-one"></div>
-        <div className="hero-background-shape hero-shape-two"></div>
+        <div className="hero-background-shape hero-shape-one" />
+        <div className="hero-background-shape hero-shape-two" />
 
         <div className="container hero-grid">
           <div className="hero-content">
             <div className="hero-eyebrow">
-              <span></span>
+              <span />
               Handcrafted in Lahore
             </div>
 
@@ -75,11 +210,16 @@ const Home = () => {
 
               <div className="hero-floating-card">
                 <span>Our favourite</span>
-                <strong>Chocolate Bliss</strong>
+                <strong>{featuredCakes[0]?.name || "Chocolate Bliss"}</strong>
 
                 <div>
                   Starting from
-                  <b>Rs. 1,800</b>
+                  <b>
+                    Rs.{" "}
+                    {Number(
+                      featuredCakes[0]?.sizes?.[0]?.price || 1800,
+                    ).toLocaleString()}
+                  </b>
                 </div>
               </div>
             </div>
@@ -122,6 +262,7 @@ const Home = () => {
           <div className="section-heading">
             <div>
               <span className="section-kicker">SHOP BY OCCASION</span>
+
               <h2>Our Collections</h2>
             </div>
 
@@ -131,30 +272,35 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="category-grid">
-            {categories.map((category) => (
-              <CategoryCard key={category.id} category={category} />
-            ))}
-          </div>
+          {!loading && (
+            <div className="category-grid">
+              {categories.map((category) => (
+                <CategoryCard key={category.id} category={category} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* ================= FEATURED CAKES ================= */}
+      {/* ================= FEATURED ================= */}
 
       <section className="featured-section">
         <div className="container">
           <div className="center-section-heading">
             <span className="section-kicker">OUR FAVOURITES</span>
+
             <h2>Made to make you smile.</h2>
 
             <p>A few of our most-loved handcrafted creations.</p>
           </div>
 
-          <div className="cake-grid">
-            {featuredCakes.map((cake) => (
-              <CakeCard key={cake.id} cake={cake} />
-            ))}
-          </div>
+          {!loading && (
+            <div className="cake-grid">
+              {featuredCakes.map((cake) => (
+                <CakeCard key={cake.id} cake={cake} />
+              ))}
+            </div>
+          )}
 
           <div className="featured-button">
             <Link to="/cakes" className="outline-button">

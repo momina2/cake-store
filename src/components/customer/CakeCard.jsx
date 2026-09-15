@@ -1,17 +1,54 @@
 import { Heart, ShoppingBag } from "lucide-react";
+
 import { Link } from "react-router-dom";
 
 const CakeCard = ({ cake }) => {
-  const startingPrice = cake.sizes[0]?.price || 0;
+  // ==========================================
+  // SAFE DATA
+  // ==========================================
+
+  const cakeId = Number(cake?.id || 0);
+
+  const sizes = Array.isArray(cake?.sizes) ? cake.sizes : [];
+
+  const prices = sizes
+    .map((size) => Number(size.price || 0))
+    .filter((price) => price > 0);
+
+  const startingPrice = prices.length > 0 ? Math.min(...prices) : 0;
+
+  const cakeImage = cake?.image || cake?.mainImage || cake?.main_image || "";
+
+  const categoryName =
+    typeof cake?.category === "object"
+      ? cake.category?.name || ""
+      : cake?.category || "";
+
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
     <div className="cake-card">
-      <Link to={`/cake/${cake.id}`} className="cake-image-wrapper">
-        <img src={cake.image} alt={cake.name} />
+      <Link to={`/cake/${cakeId}`} className="cake-image-wrapper">
+        {cakeImage ? (
+          <img src={cakeImage} alt={cake?.name || "Cake"} />
+        ) : (
+          <div className="cake-card-no-image">
+            <ShoppingBag size={28} strokeWidth={1.4} />
+
+            <span>No Image</span>
+          </div>
+        )}
 
         <button
+          type="button"
           className="wishlist-button"
-          onClick={(event) => event.preventDefault()}
+          aria-label="Add to wishlist"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
         >
           <Heart size={18} />
         </button>
@@ -25,14 +62,20 @@ const CakeCard = ({ cake }) => {
       </Link>
 
       <div className="cake-info">
-        <span className="cake-category">{cake.category}</span>
+        {categoryName && <span className="cake-category">{categoryName}</span>}
 
-        <Link to={`/cake/${cake.id}`}>
-          <h3>{cake.name}</h3>
+        <Link to={`/cake/${cakeId}`}>
+          <h3>{cake?.name || "Cake"}</h3>
         </Link>
 
         <div className="cake-price">
-          From <strong>Rs. {startingPrice.toLocaleString()}</strong>
+          {startingPrice > 0 ? (
+            <>
+              From <strong>Rs. {startingPrice.toLocaleString()}</strong>
+            </>
+          ) : (
+            <strong>Price unavailable</strong>
+          )}
         </div>
       </div>
     </div>
