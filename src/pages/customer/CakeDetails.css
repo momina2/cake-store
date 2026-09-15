@@ -1,0 +1,972 @@
+/* ==========================================
+   CAKE DETAILS PAGE
+========================================== */
+
+.cake-details-page {
+  min-height: 100vh;
+
+  padding:
+    32px 0 80px;
+
+  background:
+    var(--background);
+}
+
+/* ==========================================
+   BREADCRUMB
+========================================== */
+
+.cake-details-breadcrumb {
+  margin-bottom: 28px;
+
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  color: var(--text-soft);
+
+  font-size: 9px;
+}
+
+.cake-details-breadcrumb a {
+  transition: 0.2s ease;
+}
+
+.cake-details-breadcrumb a:hover {
+  color: var(--accent-dark);
+}
+
+.cake-details-breadcrumb strong {
+  color: var(--text);
+
+  font-weight: 500;
+}
+
+/* ==========================================
+   MAIN LAYOUT
+========================================== */
+
+.cake-details-main {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.1fr)
+    minmax(390px, 0.9fr);
+
+  gap: 65px;
+
+  align-items: start;
+}
+
+/* ==========================================
+   GALLERY
+========================================== */
+
+.cake-details-gallery {
+  min-width: 0;
+}
+
+/* ==========================================
+   MAIN IMAGE
+========================================== */
+
+.cake-details-main-image {
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 1 / 1.05;
+
+  overflow: hidden;
+
+  background: #eee6df;
+}
+
+.cake-details-main-image > img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  transition:
+    transform 0.4s ease;
+}
+
+.cake-details-main-image:hover
+  > img {
+  transform: scale(1.015);
+}
+
+.cake-details-no-image {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: var(--text-soft);
+
+  font-family: var(--serif);
+
+  font-size: 24px;
+}
+
+/* ==========================================
+   FEATURED
+========================================== */
+
+.cake-details-featured {
+  position: absolute;
+
+  top: 18px;
+  left: 18px;
+
+  padding:
+    9px 13px;
+
+  background:
+    rgba(40, 31, 27, 0.92);
+
+  color: white;
+
+  font-size: 7px;
+
+  font-weight: 600;
+
+  letter-spacing: 1.5px;
+
+  text-transform: uppercase;
+
+  backdrop-filter: blur(8px);
+}
+
+/* ==========================================
+   GALLERY ARROWS
+========================================== */
+
+.cake-gallery-arrow {
+  position: absolute;
+
+  top: 50%;
+
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transform:
+    translateY(-50%);
+
+  border: none;
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 255, 255, 0.9);
+
+  color: var(--text);
+
+  box-shadow:
+    0 6px 25px
+    rgba(38, 29, 24, 0.08);
+
+  transition:
+    0.2s ease;
+}
+
+.cake-gallery-arrow:hover {
+  background: var(--text);
+
+  color: white;
+}
+
+.cake-gallery-arrow-left {
+  left: 16px;
+}
+
+.cake-gallery-arrow-right {
+  right: 16px;
+}
+
+/* ==========================================
+   IMAGE COUNTER
+========================================== */
+
+.cake-image-counter {
+  position: absolute;
+
+  right: 15px;
+  bottom: 15px;
+
+  min-width: 49px;
+  min-height: 28px;
+
+  padding: 0 9px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    rgba(255, 255, 255, 0.92);
+
+  color: var(--text);
+
+  font-size: 8px;
+
+  backdrop-filter: blur(8px);
+}
+
+/* ==========================================
+   THUMBNAILS
+========================================== */
+
+.cake-details-thumbnails {
+  margin-top: 12px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+
+  gap: 9px;
+}
+
+.cake-thumbnail {
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 1;
+
+  overflow: hidden;
+
+  padding: 0;
+
+  border:
+    1px solid transparent;
+
+  background: #eee7e1;
+
+  opacity: 0.68;
+
+  transition:
+    opacity 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.cake-thumbnail img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.cake-thumbnail:hover {
+  opacity: 1;
+}
+
+.cake-thumbnail.active {
+  border-color:
+    var(--accent-dark);
+
+  opacity: 1;
+}
+
+.cake-thumbnail.active::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 4px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.8);
+
+  pointer-events: none;
+}
+
+/* ==========================================
+   INFORMATION SIDE
+========================================== */
+
+.cake-details-info {
+  position: sticky;
+
+  top: 115px;
+
+  padding-top: 12px;
+}
+
+/* ==========================================
+   CATEGORY
+========================================== */
+
+.cake-details-category {
+  display: block;
+
+  margin-bottom: 13px;
+
+  color: var(--accent);
+
+  font-size: 8px;
+
+  font-weight: 600;
+
+  letter-spacing: 2.5px;
+
+  text-transform: uppercase;
+}
+
+/* ==========================================
+   TITLE
+========================================== */
+
+.cake-details-info h1 {
+  max-width: 520px;
+
+  margin-bottom: 17px;
+
+  font-family: var(--serif);
+
+  font-size: clamp(
+    35px,
+    4vw,
+    52px
+  );
+
+  font-weight: 500;
+
+  line-height: 1.08;
+}
+
+/* ==========================================
+   PRICE
+========================================== */
+
+.cake-details-price {
+  margin-bottom: 21px;
+
+  color: var(--accent-dark);
+
+  font-family: var(--serif);
+
+  font-size: 22px;
+}
+
+/* ==========================================
+   DESCRIPTION
+========================================== */
+
+.cake-details-description {
+  max-width: 520px;
+
+  color: var(--text-soft);
+
+  font-size: 11px;
+
+  line-height: 1.9;
+}
+
+.cake-details-divider {
+  height: 1px;
+
+  margin:
+    27px 0;
+
+  background: var(--border);
+}
+
+/* ==========================================
+   OPTIONS
+========================================== */
+
+.cake-option-section {
+  margin-bottom: 27px;
+}
+
+.cake-option-heading {
+  margin-bottom: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cake-option-heading
+  > div {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+}
+
+.cake-option-heading span {
+  color: var(--text-soft);
+
+  font-size: 7px;
+
+  font-weight: 600;
+
+  letter-spacing: 1.6px;
+}
+
+.cake-option-heading strong {
+  color: var(--text);
+
+  font-size: 9px;
+
+  font-weight: 500;
+}
+
+/* ==========================================
+   SIZE OPTIONS
+========================================== */
+
+.cake-size-options {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 8px;
+}
+
+.cake-size-option {
+  position: relative;
+
+  min-height: 67px;
+
+  padding: 10px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+
+  gap: 4px;
+
+  border:
+    1px solid
+    var(--border);
+
+  background: white;
+
+  color: var(--text);
+
+  transition:
+    0.2s ease;
+}
+
+.cake-size-option:hover {
+  border-color:
+    var(--accent);
+}
+
+.cake-size-option.active {
+  border-color:
+    var(--accent-dark);
+
+  background:
+    var(--background-soft);
+}
+
+.cake-size-option span {
+  font-size: 10px;
+
+  font-weight: 500;
+}
+
+.cake-size-option small {
+  color:
+    var(--text-soft);
+
+  font-size: 8px;
+}
+
+.cake-size-option svg {
+  position: absolute;
+
+  top: 8px;
+  right: 8px;
+
+  color:
+    var(--accent-dark);
+}
+
+/* ==========================================
+   COLOR OPTIONS
+========================================== */
+
+.cake-color-options {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 8px;
+}
+
+.cake-color-option {
+  min-height: 39px;
+
+  padding:
+    0 13px;
+
+  display: inline-flex;
+  align-items: center;
+
+  gap: 7px;
+
+  border:
+    1px solid
+    var(--border);
+
+  background: white;
+
+  color: var(--text);
+
+  font-size: 9px;
+
+  transition:
+    0.2s ease;
+}
+
+.cake-color-option:hover {
+  border-color:
+    var(--accent);
+}
+
+.cake-color-option.active {
+  border-color:
+    var(--accent-dark);
+
+  background:
+    var(--background-soft);
+}
+
+.cake-color-option svg {
+  color:
+    var(--accent-dark);
+}
+
+/* ==========================================
+   QUANTITY
+========================================== */
+
+.cake-quantity-control {
+  width: 138px;
+
+  height: 45px;
+
+  display: grid;
+
+  grid-template-columns:
+    42px 1fr 42px;
+
+  border:
+    1px solid
+    var(--border);
+
+  background: white;
+}
+
+.cake-quantity-control button {
+  border: none;
+
+  background: transparent;
+
+  color: var(--text);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    0.2s ease;
+}
+
+.cake-quantity-control
+  button:hover:not(:disabled) {
+  background:
+    var(--background-soft);
+}
+
+.cake-quantity-control button:disabled {
+  opacity: 0.3;
+
+  cursor: not-allowed;
+}
+
+.cake-quantity-control span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-left:
+    1px solid
+    var(--border);
+
+  border-right:
+    1px solid
+    var(--border);
+
+  font-size: 10px;
+
+  font-weight: 500;
+}
+
+/* ==========================================
+   TOTAL
+========================================== */
+
+.cake-details-total {
+  margin:
+    10px 0 14px;
+
+  padding:
+    17px 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border-top:
+    1px solid
+    var(--border);
+}
+
+.cake-details-total span {
+  color:
+    var(--text-soft);
+
+  font-size: 9px;
+
+  letter-spacing: 1px;
+
+  text-transform: uppercase;
+}
+
+.cake-details-total strong {
+  font-family:
+    var(--serif);
+
+  font-size: 22px;
+
+  font-weight: 500;
+}
+
+/* ==========================================
+   ADD CART
+========================================== */
+
+.cake-add-cart-button {
+  width: 100%;
+
+  min-height: 56px;
+
+  padding:
+    0 19px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  border:
+    1px solid
+    var(--text);
+
+  background:
+    var(--text);
+
+  color: white;
+
+  font-size: 10px;
+
+  font-weight: 500;
+
+  transition:
+    0.25s ease;
+}
+
+.cake-add-cart-button:hover {
+  background:
+    var(--accent-dark);
+
+  border-color:
+    var(--accent-dark);
+
+  transform:
+    translateY(-1px);
+}
+
+.cake-add-cart-button span {
+  margin-left: auto;
+
+  padding-left: 15px;
+
+  border-left:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.25
+    );
+}
+
+/* ==========================================
+   ADDED MESSAGE
+========================================== */
+
+.cake-added-message {
+  min-height: 42px;
+
+  margin-top: 10px;
+
+  padding:
+    0 13px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  background: #e7f0e9;
+
+  color: #487056;
+
+  font-size: 9px;
+}
+
+/* ==========================================
+   EXTRA INFO
+========================================== */
+
+.cake-details-extra-info {
+  margin-top: 27px;
+
+  padding-top: 22px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 13px;
+
+  border-top:
+    1px solid
+    var(--border);
+}
+
+.cake-details-extra-info
+  > div {
+  min-width: 0;
+}
+
+.cake-details-extra-info span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color:
+    var(--text);
+
+  font-size: 6px;
+
+  font-weight: 600;
+
+  letter-spacing: 1.3px;
+}
+
+.cake-details-extra-info p {
+  color:
+    var(--text-soft);
+
+  font-size: 7px;
+
+  line-height: 1.6;
+}
+
+/* ==========================================
+   BACK
+========================================== */
+
+.cake-details-back {
+  margin-top: 45px;
+
+  padding-top: 23px;
+
+  border-top:
+    1px solid
+    var(--border);
+}
+
+.cake-details-back a {
+  display:
+    inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  color:
+    var(--text-soft);
+
+  font-size: 9px;
+
+  transition:
+    0.2s ease;
+}
+
+.cake-details-back a:hover {
+  color:
+    var(--text);
+}
+
+/* ==========================================
+   NOT FOUND
+========================================== */
+
+.cake-details-not-found {
+  min-height: 70vh;
+
+  display: flex;
+  align-items: center;
+
+  text-align: center;
+}
+
+.cake-details-not-found
+  .container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cake-details-not-found span {
+  margin-bottom: 12px;
+
+  color: var(--accent);
+
+  font-size: 8px;
+
+  font-weight: 600;
+
+  letter-spacing: 2px;
+}
+
+.cake-details-not-found h1 {
+  margin-bottom: 12px;
+
+  font-family:
+    var(--serif);
+
+  font-size: 40px;
+
+  font-weight: 500;
+}
+
+.cake-details-not-found p {
+  margin-bottom: 24px;
+
+  color:
+    var(--text-soft);
+
+  font-size: 10px;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 1000px) {
+  .cake-details-main {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(330px, 0.9fr);
+
+    gap: 38px;
+  }
+
+  .cake-size-options {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .cake-details-main {
+    grid-template-columns:
+      1fr;
+
+    gap: 35px;
+  }
+
+  .cake-details-info {
+    position: static;
+
+    padding-top: 0;
+  }
+
+  .cake-details-main-image {
+    aspect-ratio: 1 / 0.95;
+  }
+}
+
+@media (max-width: 600px) {
+  .cake-details-page {
+    padding-top: 20px;
+  }
+
+  .cake-details-main-image {
+    aspect-ratio: 1;
+  }
+
+  .cake-details-thumbnails {
+    grid-template-columns:
+      repeat(4, 1fr);
+  }
+
+  .cake-gallery-arrow {
+    width: 38px;
+    height: 38px;
+  }
+
+  .cake-gallery-arrow-left {
+    left: 10px;
+  }
+
+  .cake-gallery-arrow-right {
+    right: 10px;
+  }
+
+  .cake-details-info h1 {
+    font-size: 35px;
+  }
+
+  .cake-details-extra-info {
+    grid-template-columns:
+      1fr;
+
+    gap: 17px;
+  }
+}
+
+@media (max-width: 420px) {
+  .cake-details-thumbnails {
+    grid-template-columns:
+      repeat(3, 1fr);
+  }
+
+  .cake-size-options {
+    grid-template-columns:
+      1fr 1fr;
+  }
+}

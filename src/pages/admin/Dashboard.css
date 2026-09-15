@@ -1,0 +1,715 @@
+/* ==========================================
+   ADMIN DASHBOARD
+========================================== */
+
+.admin-dashboard-page {
+  width: 100%;
+}
+
+/* ==========================================
+   HEADING
+========================================== */
+
+.admin-dashboard-heading {
+  margin-bottom: 27px;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+.admin-dashboard-heading
+  > div:first-child
+  > span {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: var(--accent);
+
+  font-size: 8px;
+
+  font-weight: 600;
+
+  letter-spacing: 2px;
+}
+
+.admin-dashboard-heading h1 {
+  margin-bottom: 7px;
+
+  font-family: var(--serif);
+
+  font-size: 35px;
+
+  font-weight: 500;
+}
+
+.admin-dashboard-heading p {
+  max-width: 520px;
+
+  color: var(--text-soft);
+
+  font-size: 10px;
+
+  line-height: 1.7;
+}
+
+/* ==========================================
+   LIVE
+========================================== */
+
+.admin-dashboard-live {
+  min-height: 34px;
+
+  padding: 0 12px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  border: 1px solid #e5ddd7;
+
+  background: white;
+
+  color: var(--text-soft);
+
+  font-size: 8px;
+
+  letter-spacing: 0.7px;
+
+  text-transform: uppercase;
+}
+
+.admin-dashboard-live span {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: #5f936d;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(95, 147, 109, 0.12);
+}
+
+/* ==========================================
+   CARDS
+========================================== */
+
+.admin-dashboard-cards {
+  margin-bottom: 22px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 14px;
+}
+
+.admin-dashboard-card {
+  min-height: 145px;
+
+  padding: 18px;
+
+  display: flex;
+  flex-direction: column;
+
+  border: 1px solid #e5ddd7;
+
+  background: white;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-dashboard-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 14px 35px
+    rgba(38, 28, 23, 0.05);
+}
+
+.admin-dashboard-card-top {
+  margin-bottom: 19px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.admin-dashboard-card-icon {
+  width: 37px;
+  height: 37px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #f4ece6;
+
+  color: var(--accent-dark);
+}
+
+.admin-dashboard-card-top
+  > span {
+  color: var(--text-soft);
+
+  font-size: 7px;
+
+  font-weight: 600;
+
+  letter-spacing: 1px;
+
+  text-transform: uppercase;
+}
+
+.admin-dashboard-card
+  > strong {
+  margin-top: auto;
+
+  font-family: var(--serif);
+
+  font-size: 24px;
+
+  font-weight: 500;
+}
+
+.admin-dashboard-card
+  > small {
+  margin-top: 5px;
+
+  color: var(--text-soft);
+
+  font-size: 7px;
+}
+
+/* ==========================================
+   MAIN GRID
+========================================== */
+
+.admin-dashboard-main-grid {
+  margin-bottom: 22px;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.7fr)
+    minmax(300px, 0.8fr);
+
+  gap: 16px;
+}
+
+/* ==========================================
+   PANEL
+========================================== */
+
+.admin-dashboard-panel {
+  min-width: 0;
+
+  border: 1px solid #e5ddd7;
+
+  background: white;
+}
+
+.admin-dashboard-panel-heading {
+  min-height: 82px;
+
+  padding: 18px 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  border-bottom: 1px solid #eee7e2;
+}
+
+.admin-dashboard-panel-heading
+  span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: var(--accent);
+
+  font-size: 7px;
+
+  font-weight: 600;
+
+  letter-spacing: 1.5px;
+}
+
+.admin-dashboard-panel-heading
+  h2 {
+  font-family: var(--serif);
+
+  font-size: 21px;
+
+  font-weight: 500;
+}
+
+.admin-dashboard-panel-heading
+  > svg {
+  color: var(--accent-dark);
+}
+
+/* ==========================================
+   ORDERS TABLE
+========================================== */
+
+.admin-dashboard-orders-table-wrapper {
+  overflow-x: auto;
+}
+
+.admin-dashboard-orders-table {
+  width: 100%;
+
+  min-width: 680px;
+
+  border-collapse: collapse;
+}
+
+.admin-dashboard-orders-table
+  th {
+  padding: 13px 16px;
+
+  background: #faf7f4;
+
+  border-bottom:
+    1px solid #eee7e2;
+
+  color: var(--text-soft);
+
+  text-align: left;
+
+  font-size: 7px;
+
+  letter-spacing: 0.8px;
+
+  text-transform: uppercase;
+}
+
+.admin-dashboard-orders-table
+  td {
+  padding: 15px 16px;
+
+  border-bottom:
+    1px solid #eee7e2;
+
+  font-size: 8px;
+
+  vertical-align: middle;
+}
+
+.admin-dashboard-orders-table
+  tbody
+  tr:last-child
+  td {
+  border-bottom: none;
+}
+
+.admin-dashboard-orders-table
+  tbody
+  tr:hover {
+  background: #fdfaf8;
+}
+
+.admin-dashboard-orders-table
+  td
+  > strong {
+  font-size: 9px;
+
+  font-weight: 500;
+}
+
+/* ==========================================
+   CUSTOMER CELL
+========================================== */
+
+.admin-dashboard-customer-cell {
+  max-width: 170px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.admin-dashboard-customer-cell
+  strong {
+  overflow: hidden;
+
+  font-size: 9px;
+
+  font-weight: 500;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+.admin-dashboard-customer-cell
+  span {
+  overflow: hidden;
+
+  color: var(--text-soft);
+
+  font-size: 7px;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+/* ==========================================
+   ORDER STATUS
+========================================== */
+
+.admin-dashboard-order-status {
+  min-height: 25px;
+
+  padding: 0 8px;
+
+  display: inline-flex;
+  align-items: center;
+
+  font-size: 6px;
+
+  letter-spacing: 0.6px;
+
+  text-transform: uppercase;
+}
+
+.admin-dashboard-order-status.pending {
+  background: #f6ecd8;
+
+  color: #92712e;
+}
+
+.admin-dashboard-order-status.confirmed {
+  background: #e4ebf6;
+
+  color: #496588;
+}
+
+.admin-dashboard-order-status.preparing {
+  background: #efe7f5;
+
+  color: #77578c;
+}
+
+.admin-dashboard-order-status.ready {
+  background: #e4f0e6;
+
+  color: #4f7559;
+}
+
+.admin-dashboard-order-status.out-for-delivery {
+  background: #e0ecf0;
+
+  color: #476e78;
+}
+
+.admin-dashboard-order-status.delivered {
+  background: #dfeee4;
+
+  color: #3e704d;
+}
+
+/* ==========================================
+   STATUS LIST
+========================================== */
+
+.admin-dashboard-status-list {
+  padding: 18px;
+}
+
+.admin-dashboard-status-item {
+  padding: 13px 0;
+
+  border-bottom:
+    1px solid #eee7e2;
+}
+
+.admin-dashboard-status-item:last-child {
+  border-bottom: none;
+}
+
+.admin-dashboard-status-top {
+  margin-bottom: 9px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+.admin-dashboard-status-top
+  > div {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+}
+
+.admin-dashboard-status-top
+  strong {
+  font-size: 8px;
+
+  font-weight: 500;
+}
+
+.admin-dashboard-status-top
+  > div:last-child
+  span {
+  color: var(--text-soft);
+
+  font-size: 7px;
+}
+
+/* ==========================================
+   STATUS DOTS
+========================================== */
+
+.admin-dashboard-status-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #bbb;
+}
+
+.admin-dashboard-status-dot.pending {
+  background: #d4a84f;
+}
+
+.admin-dashboard-status-dot.confirmed {
+  background: #708db2;
+}
+
+.admin-dashboard-status-dot.preparing {
+  background: #9270a8;
+}
+
+.admin-dashboard-status-dot.ready {
+  background: #6e9d7a;
+}
+
+.admin-dashboard-status-dot.out-for-delivery {
+  background: #66909b;
+}
+
+.admin-dashboard-status-dot.delivered {
+  background: #57956a;
+}
+
+/* ==========================================
+   PROGRESS
+========================================== */
+
+.admin-dashboard-progress {
+  width: 100%;
+  height: 4px;
+
+  overflow: hidden;
+
+  background: #eee8e3;
+}
+
+.admin-dashboard-progress
+  > div {
+  height: 100%;
+
+  background: var(--accent);
+
+  transition: width 0.3s ease;
+}
+
+/* ==========================================
+   EMPTY
+========================================== */
+
+.admin-dashboard-empty {
+  min-height: 260px;
+
+  padding: 25px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+}
+
+.admin-dashboard-empty svg {
+  margin-bottom: 12px;
+
+  color: var(--accent);
+}
+
+.admin-dashboard-empty h3 {
+  margin-bottom: 6px;
+
+  font-family: var(--serif);
+
+  font-size: 19px;
+
+  font-weight: 500;
+}
+
+.admin-dashboard-empty p {
+  color: var(--text-soft);
+
+  font-size: 8px;
+}
+
+/* ==========================================
+   STORE OVERVIEW
+========================================== */
+
+.admin-dashboard-store-section {
+  padding: 20px;
+
+  border: 1px solid #e5ddd7;
+
+  background: white;
+}
+
+.admin-dashboard-store-heading {
+  margin-bottom: 17px;
+
+  padding-bottom: 15px;
+
+  border-bottom:
+    1px solid #eee7e2;
+}
+
+.admin-dashboard-store-heading
+  span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: var(--accent);
+
+  font-size: 7px;
+
+  font-weight: 600;
+
+  letter-spacing: 1.5px;
+}
+
+.admin-dashboard-store-heading
+  h2 {
+  font-family: var(--serif);
+
+  font-size: 21px;
+
+  font-weight: 500;
+}
+
+/* ==========================================
+   STORE GRID
+========================================== */
+
+.admin-dashboard-store-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap: 12px;
+}
+
+.admin-dashboard-store-grid
+  > div {
+  padding: 17px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  background: #faf7f4;
+
+  border: 1px solid #eee5df;
+}
+
+.admin-dashboard-store-grid
+  span {
+  color: var(--text-soft);
+
+  font-size: 7px;
+
+  font-weight: 600;
+
+  letter-spacing: 1px;
+
+  text-transform: uppercase;
+}
+
+.admin-dashboard-store-grid
+  strong {
+  font-family: var(--serif);
+
+  font-size: 23px;
+
+  font-weight: 500;
+}
+
+.admin-dashboard-store-grid
+  small {
+  color: var(--text-soft);
+
+  font-size: 7px;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 1250px) {
+  .admin-dashboard-cards {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1000px) {
+  .admin-dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dashboard-store-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 650px) {
+  .admin-dashboard-heading {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .admin-dashboard-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dashboard-store-grid {
+    grid-template-columns: 1fr;
+  }
+}
