@@ -155,7 +155,6 @@
 // export default AdminLogin;
 
 
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -166,20 +165,16 @@ import {
   LoaderCircle,
 } from "lucide-react";
 
+import logo from "../../assets/images/just-bake-it-logo.jpeg";
+
 const AdminLogin = () => {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // ==========================================
-  // ADMIN LOGIN
-  // ==========================================
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -187,10 +182,6 @@ const AdminLogin = () => {
     setError("");
 
     const cleanEmail = email.trim().toLowerCase();
-
-    // ========================================
-    // FRONTEND VALIDATION
-    // ========================================
 
     if (!cleanEmail) {
       setError("Please enter your email address.");
@@ -205,10 +196,6 @@ const AdminLogin = () => {
     try {
       setLoading(true);
 
-      // ========================================
-      // REAL ADMIN LOGIN API
-      // ========================================
-
       const response = await fetch(
         "https://coreops.pk/cakes/api/Admin/login.php",
         {
@@ -220,43 +207,24 @@ const AdminLogin = () => {
 
           body: JSON.stringify({
             email: cleanEmail,
-            password: password,
+            password,
           }),
         }
       );
-
-      // ========================================
-      // READ API RESPONSE
-      // ========================================
 
       let result;
 
       try {
         result = await response.json();
       } catch {
-        throw new Error(
-          "Server returned an invalid response."
-        );
+        throw new Error("Server returned an invalid response.");
       }
 
-      // ========================================
-      // LOGIN FAILED
-      // ========================================
-
-      if (
-        !response.ok ||
-        result.status !== "success"
-      ) {
+      if (!response.ok || result.status !== "success") {
         throw new Error(
-          result.message ||
-            "Invalid admin email or password."
+          result.message || "Invalid admin email or password."
         );
       }
-
-      // ========================================
-      // ADMIN DATA CHECK
-      // API returns result.admin
-      // ========================================
 
       if (!result.admin) {
         throw new Error(
@@ -274,37 +242,22 @@ const AdminLogin = () => {
         );
       }
 
-      // ========================================
-      // PREPARE ADMIN DATA
-      // ========================================
-
       const admin = {
         id: Number(result.admin.id),
         name: result.admin.name,
         email: result.admin.email,
       };
 
-      // ========================================
-      // SAVE ADMIN LOGIN
-      // ========================================
-
       localStorage.setItem(
         "cakeAdmin",
         JSON.stringify(admin)
       );
 
-      // ========================================
-      // NAVIGATE TO DASHBOARD
-      // ========================================
-
       navigate("/admin/dashboard", {
         replace: true,
       });
     } catch (err) {
-      console.error(
-        "Admin login error:",
-        err
-      );
+      console.error("Admin login error:", err);
 
       setError(
         err.message ||
@@ -318,10 +271,17 @@ const AdminLogin = () => {
   return (
     <section className="admin-login-page">
       <div className="admin-login-left">
-        <div className="admin-login-brand">
-          <span>HANDCRAFTED</span>
+        <div className="admin-login-brand admin-login-logo-brand">
+          <img
+            src={logo}
+            alt="Just Bake It Official"
+            className="admin-login-logo"
+          />
 
-          <h2>Maison Cake</h2>
+          <div>
+            <span>FRESH & DELICIOUS</span>
+            <h2>Just Bake It Official</h2>
+          </div>
         </div>
 
         <div className="admin-login-message">
@@ -352,10 +312,8 @@ const AdminLogin = () => {
           <h2>Welcome back.</h2>
 
           <p>
-            Sign in to manage Maison Cake.
+            Sign in to manage Just Bake It Official.
           </p>
-
-          {/* EMAIL */}
 
           <div className="admin-login-field">
             <label htmlFor="admin-email">
@@ -368,7 +326,7 @@ const AdminLogin = () => {
               <input
                 id="admin-email"
                 type="email"
-                placeholder="admin@maisoncake.pk"
+                placeholder="Enter admin email"
                 value={email}
                 disabled={loading}
                 autoComplete="email"
@@ -383,8 +341,6 @@ const AdminLogin = () => {
             </div>
           </div>
 
-          {/* PASSWORD */}
-
           <div className="admin-login-field">
             <label htmlFor="admin-password">
               Password
@@ -395,11 +351,7 @@ const AdminLogin = () => {
 
               <input
                 id="admin-password"
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter password"
                 value={password}
                 disabled={loading}
@@ -422,9 +374,7 @@ const AdminLogin = () => {
                 }
                 disabled={loading}
                 onClick={() =>
-                  setShowPassword(
-                    (previous) => !previous
-                  )
+                  setShowPassword((previous) => !previous)
                 }
               >
                 {showPassword ? (
@@ -436,15 +386,11 @@ const AdminLogin = () => {
             </div>
           </div>
 
-          {/* ERROR */}
-
           {error && (
             <span className="admin-login-error">
               {error}
             </span>
           )}
-
-          {/* SIGN IN BUTTON */}
 
           <button
             type="submit"
@@ -457,7 +403,6 @@ const AdminLogin = () => {
                   size={18}
                   className="admin-login-spinner"
                 />
-
                 Signing In...
               </>
             ) : (

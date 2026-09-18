@@ -1,9 +1,14 @@
-
-
-import { Routes, Route } from "react-router-dom";
+import {
+  Routes,
+  Route,
+} from "react-router-dom";
 
 import CustomerLayout from "./layouts/CustomerLayout";
 import AdminLayout from "./layouts/AdminLayout";
+
+/* ==========================================
+   CUSTOMER
+========================================== */
 
 import Home from "./pages/customer/Home";
 import Cakes from "./pages/customer/Cakes";
@@ -15,6 +20,10 @@ import Register from "./pages/customer/Register";
 import MyOrders from "./pages/customer/MyOrders";
 import OrderDetails from "./pages/customer/OrderDetails";
 
+/* ==========================================
+   ADMIN
+========================================== */
+
 import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
@@ -22,7 +31,10 @@ import Categories from "./pages/admin/Categories";
 import CakesAdmin from "./pages/admin/CakesAdmin";
 import Sizes from "./pages/admin/Sizes";
 import Colors from "./pages/admin/Colors";
+import Fillings from "./pages/admin/Fillings";
+import Flavours from "./pages/admin/Flavours";
 import Customers from "./pages/admin/Customers";
+import PaymentSettings from "./pages/admin/PaymentSettings";
 
 function App() {
   return (
@@ -31,7 +43,11 @@ function App() {
           CUSTOMER
       ========================= */}
 
-      <Route element={<CustomerLayout />}>
+      <Route
+        element={
+          <CustomerLayout />
+        }
+      >
         <Route
           path="/"
           element={<Home />}
@@ -44,7 +60,9 @@ function App() {
 
         <Route
           path="/cake/:id"
-          element={<CakeDetails />}
+          element={
+            <CakeDetails />
+          }
         />
 
         <Route
@@ -54,7 +72,9 @@ function App() {
 
         <Route
           path="/checkout"
-          element={<Checkout />}
+          element={
+            <Checkout />
+          }
         />
 
         <Route
@@ -64,17 +84,23 @@ function App() {
 
         <Route
           path="/register"
-          element={<Register />}
+          element={
+            <Register />
+          }
         />
 
         <Route
           path="/my-orders"
-          element={<MyOrders />}
+          element={
+            <MyOrders />
+          }
         />
 
         <Route
           path="/my-orders/:id"
-          element={<OrderDetails />}
+          element={
+            <OrderDetails />
+          }
         />
       </Route>
 
@@ -84,7 +110,9 @@ function App() {
 
       <Route
         path="/admin/login"
-        element={<AdminLogin />}
+        element={
+          <AdminLogin />
+        }
       />
 
       {/* =========================
@@ -93,41 +121,82 @@ function App() {
 
       <Route
         path="/admin"
-        element={<AdminLayout />}
+        element={
+          <AdminLayout />
+        }
       >
         <Route
           path="dashboard"
-          element={<Dashboard />}
+          element={
+            <Dashboard />
+          }
         />
 
         <Route
           path="orders"
-          element={<Orders />}
+          element={
+            <Orders />
+          }
         />
 
         <Route
           path="cakes"
-          element={<CakesAdmin />}
+          element={
+            <CakesAdmin />
+          }
         />
 
         <Route
           path="categories"
-          element={<Categories />}
+          element={
+            <Categories />
+          }
         />
 
         <Route
           path="sizes"
-          element={<Sizes />}
+          element={
+            <Sizes />
+          }
         />
 
         <Route
           path="colors"
-          element={<Colors />}
+          element={
+            <Colors />
+          }
+        />
+
+        {/* FILLINGS */}
+
+        <Route
+          path="fillings"
+          element={
+            <Fillings />
+          }
+        />
+
+        {/* FLAVOURS */}
+
+        <Route
+          path="flavours"
+          element={
+            <Flavours />
+          }
         />
 
         <Route
           path="customers"
-          element={<Customers />}
+          element={
+            <Customers />
+          }
+        />
+
+        <Route
+          path="payment-settings"
+          element={
+            <PaymentSettings />
+          }
         />
       </Route>
     </Routes>

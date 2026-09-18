@@ -17,6 +17,10 @@ import {
   Phone,
   User,
   LoaderCircle,
+  Landmark,
+  CreditCard,
+  ScrollText,
+  CircleCheck,
 } from "lucide-react";
 
 import toast, {
@@ -46,6 +50,25 @@ const Checkout = () => {
 
   const [submitting, setSubmitting] =
     useState(false);
+
+  // ==========================================
+  // PAYMENT SETTINGS
+  // ==========================================
+
+  const [
+    paymentSettings,
+    setPaymentSettings,
+  ] = useState(null);
+
+  const [
+    paymentLoading,
+    setPaymentLoading,
+  ] = useState(true);
+
+  const [
+    paymentError,
+    setPaymentError,
+  ] = useState("");
 
   // ==========================================
   // FORM
@@ -98,21 +121,23 @@ const Checkout = () => {
 
       setCustomer(parsedUser);
 
-      setFormData((previous) => ({
-        ...previous,
+      setFormData(
+        (previous) => ({
+          ...previous,
 
-        customerName:
-          parsedUser.name ||
-          previous.customerName,
+          customerName:
+            parsedUser.name ||
+            previous.customerName,
 
-        email:
-          parsedUser.email ||
-          previous.email,
+          email:
+            parsedUser.email ||
+            previous.email,
 
-        phone:
-          parsedUser.phone ||
-          previous.phone,
-      }));
+          phone:
+            parsedUser.phone ||
+            previous.phone,
+        })
+      );
     } catch (error) {
       console.error(
         "Customer loading error:",
@@ -124,22 +149,130 @@ const Checkout = () => {
   }, []);
 
   // ==========================================
+  // LOAD PAYMENT SETTINGS
+  // ==========================================
+
+  useEffect(() => {
+    const loadPaymentSettings =
+      async () => {
+        try {
+          setPaymentLoading(true);
+          setPaymentError("");
+
+          const response =
+            await fetch(
+              `${API_ROOT}/PaymentSettings/get.php`,
+              {
+                method: "GET",
+              }
+            );
+
+          let result;
+
+          try {
+            result =
+              await response.json();
+          } catch {
+            throw new Error(
+              "Server returned an invalid payment settings response."
+            );
+          }
+
+          if (
+            !response.ok ||
+            result.status !==
+              "success"
+          ) {
+            throw new Error(
+              result.message ||
+                "Unable to load payment details."
+            );
+          }
+
+          const data =
+            result.data || {};
+
+          if (
+            !data.bank_name ||
+            !data.account_title ||
+            !data.account_number
+          ) {
+            throw new Error(
+              "Payment details have not been configured yet."
+            );
+          }
+
+          setPaymentSettings({
+            payment_method:
+              data.payment_method ||
+              "Advance Payment",
+
+            bank_name:
+              data.bank_name ||
+              "",
+
+            account_title:
+              data.account_title ||
+              "",
+
+            account_number:
+              data.account_number ||
+              "",
+
+            iban:
+              data.iban || "",
+
+            instructions:
+              data.instructions ||
+              "",
+          });
+        } catch (error) {
+          console.error(
+            "Payment settings loading error:",
+            error
+          );
+
+          setPaymentSettings(
+            null
+          );
+
+          setPaymentError(
+            error.message ||
+              "Unable to load payment details."
+          );
+        } finally {
+          setPaymentLoading(
+            false
+          );
+        }
+      };
+
+    loadPaymentSettings();
+  }, []);
+
+  // ==========================================
   // HANDLE CHANGE
   // ==========================================
 
-  const handleChange = (event) => {
+  const handleChange = (
+    event
+  ) => {
     const { name, value } =
       event.target;
 
-    setFormData((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
+    setFormData(
+      (previous) => ({
+        ...previous,
+        [name]: value,
+      })
+    );
 
-    setErrors((previous) => ({
-      ...previous,
-      [name]: "",
-    }));
+    setErrors(
+      (previous) => ({
+        ...previous,
+        [name]: "",
+      })
+    );
   };
 
   // ==========================================
@@ -183,12 +316,16 @@ const Checkout = () => {
         "City is required.";
     }
 
-    if (!formData.deliveryDate) {
+    if (
+      !formData.deliveryDate
+    ) {
       newErrors.deliveryDate =
         "Delivery date is required.";
     }
 
-    if (!formData.deliveryTime) {
+    if (
+      !formData.deliveryTime
+    ) {
       newErrors.deliveryTime =
         "Delivery time is required.";
     }
@@ -214,7 +351,7 @@ const Checkout = () => {
       }
 
       // ======================================
-      // LOGIN CHECK
+      // LOGIN
       // ======================================
 
       if (!customer?.id) {
@@ -230,7 +367,30 @@ const Checkout = () => {
       }
 
       // ======================================
-      // FORM CHECK
+      // PAYMENT
+      // ======================================
+
+      if (paymentLoading) {
+        toast.error(
+          "Payment details are still loading. Please wait."
+        );
+
+        return;
+      }
+
+      if (
+        !paymentSettings ||
+        paymentError
+      ) {
+        toast.error(
+          "Payment details are currently unavailable. Please try again later."
+        );
+
+        return;
+      }
+
+      // ======================================
+      // FORM
       // ======================================
 
       if (!validateForm()) {
@@ -242,7 +402,7 @@ const Checkout = () => {
       }
 
       // ======================================
-      // CART CHECK
+      // CART
       // ======================================
 
       if (
@@ -279,16 +439,24 @@ const Checkout = () => {
                   0
               );
 
+            const flavourId =
+              Number(
+                item.flavour_id ||
+                  item.selectedFlavourId ||
+                  0
+              );
+
             return (
               cakeId <= 0 ||
-              sizeId <= 0
+              sizeId <= 0 ||
+              flavourId <= 0
             );
           }
         );
 
       if (invalidItem) {
         toast.error(
-          "Your cart contains old cake data. Please remove the items and add them again."
+          "Your cart contains old or incomplete cake data. Please remove the items and add them again."
         );
 
         return;
@@ -299,54 +467,138 @@ const Checkout = () => {
       // ======================================
 
       const orderItems =
-        cartItems.map((item) => {
-          const cakeId =
-            Number(
-              item.cake_id ||
-                item.id
-            );
+        cartItems.map(
+          (item) => {
+            // ================================
+            // CAKE
+            // ================================
 
-          const sizeId =
-            Number(
-              item.size_id ||
-                item.selectedSizeId
-            );
+            const cakeId =
+              Number(
+                item.cake_id ||
+                  item.id
+              );
 
-          const rawColorId =
-            item.color_id ||
-            item.selectedColorId ||
-            null;
+            // ================================
+            // SIZE
+            // ================================
 
-          const colorId =
-            rawColorId
-              ? Number(rawColorId)
-              : null;
+            const sizeId =
+              Number(
+                item.size_id ||
+                  item.selectedSizeId
+              );
 
-          return {
-            cake_id: cakeId,
+            // ================================
+            // COLOR
+            // ================================
 
-            size_id: sizeId,
+            const rawColorId =
+              item.color_id ??
+              item.selectedColorId ??
+              null;
 
-            color_id: colorId,
+            const colorId =
+              rawColorId &&
+              Number(
+                rawColorId
+              ) > 0
+                ? Number(
+                    rawColorId
+                  )
+                : null;
 
-            quantity: Number(
-              item.quantity || 1
-            ),
+            // ================================
+            // FLAVOUR
+            // ================================
 
-            special_instructions:
-              item.cakeMessage ||
-              "",
-          };
-        });
+            const rawFlavourId =
+              item.flavour_id ??
+              item.selectedFlavourId ??
+              null;
+
+            const flavourId =
+              rawFlavourId &&
+              Number(
+                rawFlavourId
+              ) > 0
+                ? Number(
+                    rawFlavourId
+                  )
+                : null;
+
+            // ================================
+            // FILLING
+            // ================================
+
+            const rawFillingId =
+              item.filling_id ??
+              item.selectedFillingId ??
+              null;
+
+            const fillingId =
+              rawFillingId &&
+              Number(
+                rawFillingId
+              ) > 0
+                ? Number(
+                    rawFillingId
+                  )
+                : null;
+
+            // ================================
+            // REFERENCE IMAGE
+            // ================================
+
+            const referenceImage =
+              item.reference_image ||
+              item.referenceImage ||
+              "";
+
+            return {
+              cake_id:
+                cakeId,
+
+              size_id:
+                sizeId,
+
+              color_id:
+                colorId,
+
+              // Backend validates flavour.
+              flavour_id:
+                flavourId,
+
+              // Backend gets actual filling
+              // name + charge from DB.
+              filling_id:
+                fillingId,
+
+              reference_image:
+                referenceImage,
+
+              quantity:
+                Number(
+                  item.quantity ||
+                    1
+                ),
+
+              special_instructions:
+                item.cakeMessage ||
+                "",
+            };
+          }
+        );
 
       // ======================================
       // REQUEST
       // ======================================
 
       const payload = {
-        customer_id: Number(
-          customer.id
-        ),
+        customer_id:
+          Number(
+            customer.id
+          ),
 
         customer_name:
           formData.customerName.trim(),
@@ -380,9 +632,10 @@ const Checkout = () => {
         discount: 0,
 
         payment_method:
-          "Cash on Delivery",
+          "Advance Payment",
 
-        items: orderItems,
+        items:
+          orderItems,
       };
 
       try {
@@ -392,16 +645,18 @@ const Checkout = () => {
           await fetch(
             `${API_ROOT}/Orders/add.php`,
             {
-              method: "POST",
+              method:
+                "POST",
 
               headers: {
                 "Content-Type":
                   "application/json",
               },
 
-              body: JSON.stringify(
-                payload
-              ),
+              body:
+                JSON.stringify(
+                  payload
+                ),
             }
           );
 
@@ -433,7 +688,7 @@ const Checkout = () => {
         }
 
         // ====================================
-        // ORDER DATA FROM API
+        // ORDER DATA
         // ====================================
 
         const responseData =
@@ -457,13 +712,14 @@ const Checkout = () => {
         }
 
         // ====================================
-        // SAVE ONLY LAST ORDER REFERENCE
+        // LAST ORDER
         // ====================================
 
         localStorage.setItem(
           "lastCakeOrder",
           JSON.stringify({
-            id: Number(orderId),
+            id:
+              Number(orderId),
 
             order_id:
               Number(orderId),
@@ -472,12 +728,14 @@ const Checkout = () => {
               orderNumber,
 
             customer_id:
-              Number(customer.id),
+              Number(
+                customer.id
+              ),
           })
         );
 
         // ====================================
-        // CLEAR CART ONLY AFTER SUCCESS
+        // CLEAR CART
         // ====================================
 
         clearCart();
@@ -516,7 +774,9 @@ const Checkout = () => {
   // EMPTY CART
   // ==========================================
 
-  if (cartItems.length === 0) {
+  if (
+    cartItems.length === 0
+  ) {
     return (
       <>
         <Toaster position="top-right" />
@@ -529,7 +789,8 @@ const Checkout = () => {
 
             <p>
               Add a cake before
-              continuing to checkout.
+              continuing to
+              checkout.
             </p>
 
             <Link
@@ -544,6 +805,10 @@ const Checkout = () => {
     );
   }
 
+  // ==========================================
+  // UI
+  // ==========================================
+
   return (
     <>
       <Toaster position="top-right" />
@@ -554,7 +819,10 @@ const Checkout = () => {
             to="/cart"
             className="checkout-back-link"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft
+              size={16}
+            />
+
             Back to Cart
           </Link>
 
@@ -568,9 +836,9 @@ const Checkout = () => {
             </h1>
 
             <p>
-              Tell us where and when
-              you'd like your cake
-              delivered.
+              Enter your delivery
+              details and complete
+              your advance payment.
             </p>
           </div>
 
@@ -580,10 +848,15 @@ const Checkout = () => {
               handlePlaceOrder
             }
           >
-            {/* LEFT */}
+            {/* ==================================
+                LEFT
+            ================================== */}
 
             <div className="checkout-form-side">
-              {/* CONTACT */}
+
+              {/* ================================
+                  01 CONTACT
+              ================================ */}
 
               <div className="checkout-card">
                 <div className="checkout-card-heading">
@@ -593,8 +866,7 @@ const Checkout = () => {
 
                   <div>
                     <h2>
-                      Contact
-                      Information
+                      Contact Information
                     </h2>
 
                     <p>
@@ -606,6 +878,7 @@ const Checkout = () => {
                 </div>
 
                 <div className="checkout-form-grid">
+
                   {/* NAME */}
 
                   <div className="form-group full-field">
@@ -719,7 +992,9 @@ const Checkout = () => {
                 </div>
               </div>
 
-              {/* DELIVERY */}
+              {/* ================================
+                  02 DELIVERY
+              ================================ */}
 
               <div className="checkout-card">
                 <div className="checkout-card-heading">
@@ -733,13 +1008,15 @@ const Checkout = () => {
                     </h2>
 
                     <p>
-                      Where should we
-                      send your order?
+                      Where and when
+                      should we send
+                      your order?
                     </p>
                   </div>
                 </div>
 
                 <div className="checkout-form-grid">
+
                   {/* ADDRESS */}
 
                   <div className="form-group full-field">
@@ -868,28 +1145,23 @@ const Checkout = () => {
                         </option>
 
                         <option value="10:00 AM - 12:00 PM">
-                          10:00 AM -
-                          12:00 PM
+                          10:00 AM - 12:00 PM
                         </option>
 
                         <option value="12:00 PM - 02:00 PM">
-                          12:00 PM -
-                          02:00 PM
+                          12:00 PM - 02:00 PM
                         </option>
 
                         <option value="02:00 PM - 04:00 PM">
-                          02:00 PM -
-                          04:00 PM
+                          02:00 PM - 04:00 PM
                         </option>
 
                         <option value="04:00 PM - 06:00 PM">
-                          04:00 PM -
-                          06:00 PM
+                          04:00 PM - 06:00 PM
                         </option>
 
                         <option value="06:00 PM - 08:00 PM">
-                          06:00 PM -
-                          08:00 PM
+                          06:00 PM - 08:00 PM
                         </option>
                       </select>
                     </div>
@@ -928,9 +1200,219 @@ const Checkout = () => {
                   </div>
                 </div>
               </div>
+
+              {/* ================================
+                  03 PAYMENT
+              ================================ */}
+
+              <div className="checkout-card checkout-payment-card">
+                <div className="checkout-card-heading">
+                  <span>
+                    03
+                  </span>
+
+                  <div>
+                    <h2>
+                      Advance Payment
+                    </h2>
+
+                    <p>
+                      Please transfer
+                      the payment using
+                      the account details
+                      below.
+                    </p>
+                  </div>
+                </div>
+
+                {paymentLoading ? (
+                  <div className="checkout-payment-loading">
+                    <LoaderCircle
+                      size={20}
+                      className="checkout-payment-spinner"
+                    />
+
+                    <span>
+                      Loading payment
+                      details...
+                    </span>
+                  </div>
+                ) : paymentError ? (
+                  <div className="checkout-payment-error">
+                    <strong>
+                      Payment details
+                      unavailable
+                    </strong>
+
+                    <p>
+                      {paymentError}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="checkout-payment-banner">
+                      <div className="checkout-payment-banner-icon">
+                        <CircleCheck
+                          size={20}
+                        />
+                      </div>
+
+                      <div>
+                        <strong>
+                          {paymentSettings
+                            ?.payment_method ||
+                            "Advance Payment"}
+                        </strong>
+
+                        <p>
+                          Transfer the
+                          order amount
+                          before placing
+                          your order.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="checkout-bank-details">
+
+                      {/* BANK */}
+
+                      <div className="checkout-bank-detail">
+                        <div className="checkout-bank-icon">
+                          <Landmark
+                            size={18}
+                          />
+                        </div>
+
+                        <div>
+                          <span>
+                            Bank / Wallet
+                          </span>
+
+                          <strong>
+                            {
+                              paymentSettings
+                                ?.bank_name
+                            }
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* ACCOUNT TITLE */}
+
+                      <div className="checkout-bank-detail">
+                        <div className="checkout-bank-icon">
+                          <User
+                            size={18}
+                          />
+                        </div>
+
+                        <div>
+                          <span>
+                            Account Title
+                          </span>
+
+                          <strong>
+                            {
+                              paymentSettings
+                                ?.account_title
+                            }
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* ACCOUNT NUMBER */}
+
+                      <div className="checkout-bank-detail">
+                        <div className="checkout-bank-icon">
+                          <CreditCard
+                            size={18}
+                          />
+                        </div>
+
+                        <div>
+                          <span>
+                            Account Number
+                          </span>
+
+                          <strong>
+                            {
+                              paymentSettings
+                                ?.account_number
+                            }
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* IBAN */}
+
+                      {paymentSettings
+                        ?.iban && (
+                        <div className="checkout-bank-detail">
+                          <div className="checkout-bank-icon">
+                            <Landmark
+                              size={18}
+                            />
+                          </div>
+
+                          <div>
+                            <span>
+                              IBAN
+                            </span>
+
+                            <strong className="checkout-bank-long-value">
+                              {
+                                paymentSettings
+                                  .iban
+                              }
+                            </strong>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {paymentSettings
+                      ?.instructions && (
+                      <div className="checkout-payment-instructions">
+                        <ScrollText
+                          size={18}
+                        />
+
+                        <div>
+                          <strong>
+                            Payment
+                            Instructions
+                          </strong>
+
+                          <p>
+                            {
+                              paymentSettings
+                                .instructions
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="checkout-payment-total">
+                      <span>
+                        Amount to
+                        Transfer
+                      </span>
+
+                      <strong>
+                        Rs.{" "}
+                        {grandTotal.toLocaleString()}
+                      </strong>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
-            {/* RIGHT */}
+            {/* ==================================
+                RIGHT - ORDER SUMMARY
+            ================================== */}
 
             <aside className="checkout-summary">
               <span className="section-kicker">
@@ -946,89 +1428,255 @@ const Checkout = () => {
                   (
                     item,
                     index
-                  ) => (
-                    <div
-                      className="checkout-summary-item"
-                      key={`${
-                        item.cake_id ||
-                        item.id
-                      }-${
-                        item.size_id ||
-                        item.selectedSizeId
-                      }-${
-                        item.color_id ||
-                        item.selectedColorId ||
-                        "no-color"
-                      }-${index}`}
-                    >
-                      <div className="checkout-summary-image">
-                        {item.image ? (
-                          <img
-                            src={
-                              item.image
-                            }
-                            alt={
-                              item.name
-                            }
-                          />
-                        ) : (
-                          <div>
-                            No Image
-                          </div>
-                        )}
+                  ) => {
+                    // ==========================
+                    // FLAVOUR
+                    // ==========================
 
-                        <span>
-                          {
-                            item.quantity
-                          }
-                        </span>
-                      </div>
+                    const flavourName =
+                      item.selectedFlavour ||
+                      item.selected_flavour ||
+                      "";
 
-                      <div className="checkout-summary-info">
-                        <h4>
-                          {item.name}
-                        </h4>
+                    // ==========================
+                    // FILLING
+                    // ==========================
 
-                        <p>
-                          {
-                            item.selectedSize
-                          }
+                    const fillingName =
+                      item.selectedFilling ||
+                      item.selected_filling ||
+                      "";
 
-                          {item.selectedColor
-                            ? ` · ${item.selectedColor}`
-                            : ""}
-                        </p>
+                    const fillingCharge =
+                      Number(
+                        item.filling_charge ||
+                          0
+                      );
 
-                        {item.cakeMessage && (
-                          <small>
-                            "
+                    // ==========================
+                    // REFERENCE IMAGE
+                    // ==========================
+
+                    const referenceImage =
+                      item.reference_image ||
+                      item.referenceImage ||
+                      "";
+
+                    return (
+                      <div
+                        className="checkout-summary-item"
+                        key={`${
+                          item.cake_id ||
+                          item.id
+                        }-${
+                          item.size_id ||
+                          item.selectedSizeId
+                        }-${
+                          item.color_id ||
+                          item.selectedColorId ||
+                          "no-color"
+                        }-${
+                          item.flavour_id ||
+                          item.selectedFlavourId ||
+                          flavourName ||
+                          "no-flavour"
+                        }-${
+                          item.filling_id ||
+                          item.selectedFillingId ||
+                          fillingName ||
+                          "no-filling"
+                        }-${
+                          referenceImage ||
+                          "no-reference"
+                        }-${index}`}
+                      >
+                        {/* CAKE IMAGE */}
+
+                        <div className="checkout-summary-image">
+                          {item.image ? (
+                            <img
+                              src={
+                                item.image
+                              }
+                              alt={
+                                item.name
+                              }
+                            />
+                          ) : (
+                            <div>
+                              No Image
+                            </div>
+                          )}
+
+                          <span>
                             {
-                              item.cakeMessage
+                              item.quantity
                             }
-                            "
-                          </small>
-                        )}
-                      </div>
+                          </span>
+                        </div>
 
-                      <strong>
-                        Rs.{" "}
-                        {(
-                          Number(
-                            item.price ||
+                        {/* DETAILS */}
+
+                        <div className="checkout-summary-info">
+                          <h4>
+                            {item.name}
+                          </h4>
+
+                          {/* SIZE + COLOR */}
+
+                          <p>
+                            {item.selectedSize ||
+                              item.selected_size}
+
+                            {(item.selectedColor ||
+                              item.selected_color)
+                              ? ` · ${
+                                  item.selectedColor ||
+                                  item.selected_color
+                                }`
+                              : ""}
+                          </p>
+
+                          {/* FLAVOUR */}
+
+                          <p
+                            style={{
+                              marginTop:
+                                "4px",
+                            }}
+                          >
+                            Flavour:{" "}
+                            <strong>
+                              {flavourName ||
+                                "—"}
+                            </strong>
+                          </p>
+
+                          {/* FILLING */}
+
+                          <p
+                            style={{
+                              marginTop:
+                                "4px",
+                            }}
+                          >
+                            Filling:{" "}
+                            <strong>
+                              {fillingName ||
+                                "No Filling"}
+                            </strong>
+
+                            {fillingName &&
+                            fillingCharge >
                               0
-                          ) *
-                          Number(
-                            item.quantity ||
-                              0
-                          )
-                        ).toLocaleString()}
-                      </strong>
-                    </div>
-                  )
+                              ? ` (+ Rs. ${fillingCharge.toLocaleString()})`
+                              : ""}
+                          </p>
+
+                          {/* REFERENCE IMAGE */}
+
+                          {referenceImage && (
+                            <div
+                              style={{
+                                marginTop:
+                                  "9px",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  display:
+                                    "block",
+
+                                  marginBottom:
+                                    "5px",
+
+                                  fontSize:
+                                    "10px",
+
+                                  color:
+                                    "var(--text-soft)",
+                                }}
+                              >
+                                Reference Cake
+                              </span>
+
+                              <a
+                                href={
+                                  referenceImage
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  display:
+                                    "inline-block",
+                                }}
+                              >
+                                <img
+                                  src={
+                                    referenceImage
+                                  }
+                                  alt="Cake reference"
+                                  style={{
+                                    display:
+                                      "block",
+
+                                    width:
+                                      "72px",
+
+                                    height:
+                                      "72px",
+
+                                    objectFit:
+                                      "cover",
+
+                                    borderRadius:
+                                      "7px",
+
+                                    border:
+                                      "1px solid var(--border)",
+                                  }}
+                                />
+                              </a>
+                            </div>
+                          )}
+
+                          {/* MESSAGE */}
+
+                          {item.cakeMessage && (
+                            <small>
+                              "
+                              {
+                                item.cakeMessage
+                              }
+                              "
+                            </small>
+                          )}
+                        </div>
+
+                        {/* PRICE */}
+
+                        <strong>
+                          Rs.{" "}
+                          {(
+                            Number(
+                              item.price ||
+                                0
+                            ) *
+                            Number(
+                              item.quantity ||
+                                0
+                            )
+                          ).toLocaleString()}
+                        </strong>
+                      </div>
+                    );
+                  }
                 )}
               </div>
 
-              {/* PRICES */}
+              {/* ==================================
+                  PRICES
+              ================================== */}
 
               <div className="checkout-price-breakdown">
                 <div>
@@ -1067,13 +1715,34 @@ const Checkout = () => {
                 </strong>
               </div>
 
-              {/* PLACE ORDER */}
+              {/* ==================================
+                  PAYMENT METHOD
+              ================================== */}
+
+              <div className="checkout-summary-payment-method">
+                <span>
+                  Payment Method
+                </span>
+
+                <strong>
+                  Advance Payment
+                </strong>
+              </div>
+
+              {/* ==================================
+                  PLACE ORDER
+              ================================== */}
 
               <button
                 type="submit"
                 className="place-order-button"
                 disabled={
-                  submitting
+                  submitting ||
+                  paymentLoading ||
+                  !paymentSettings ||
+                  Boolean(
+                    paymentError
+                  )
                 }
               >
                 {submitting ? (
@@ -1081,7 +1750,16 @@ const Checkout = () => {
                     <LoaderCircle
                       size={17}
                     />
+
                     Placing Order...
+                  </>
+                ) : paymentLoading ? (
+                  <>
+                    <LoaderCircle
+                      size={17}
+                    />
+
+                    Loading Payment...
                   </>
                 ) : (
                   <>
@@ -1091,12 +1769,21 @@ const Checkout = () => {
                 )}
               </button>
 
+              {paymentError && (
+                <p className="checkout-payment-blocked">
+                  Order placement is
+                  temporarily unavailable
+                  until payment details
+                  are configured.
+                </p>
+              )}
+
               <p className="checkout-confirmation-note">
                 By placing your order,
                 you confirm that the
-                delivery details
-                provided above are
-                correct.
+                delivery and payment
+                details provided above
+                are correct.
               </p>
             </aside>
           </form>

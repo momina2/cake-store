@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, CakeSlice, Heart, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import logo from "../../assets/images/just-bake-it-logo.jpeg";
 
 import CategoryCard from "../../components/customer/CategoryCard";
 import CakeCard from "../../components/customer/CakeCard";
@@ -156,6 +157,19 @@ const Home = () => {
 
         <div className="container hero-grid">
           <div className="hero-content">
+            <div className="home-brand-intro">
+              <img
+                src={logo}
+                alt="Just Bake It Official"
+                className="home-brand-logo"
+              />
+
+              <div>
+                <span>JUST BAKE IT OFFICIAL</span>
+                <strong>Fresh & Delicious Cakes</strong>
+              </div>
+            </div>
+
             <div className="hero-eyebrow">
               <span />
               Handcrafted in Lahore

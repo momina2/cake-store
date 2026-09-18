@@ -6,6 +6,8 @@ import {
   Plus,
   ShoppingBag,
   Trash2,
+  Image as ImageIcon,
+  ExternalLink,
 } from "lucide-react";
 
 import { useCart } from "../../context/CartContext";
@@ -64,6 +66,7 @@ const Cart = () => {
   return (
     <section className="cart-page">
       <div className="container">
+
         <Link
           to="/cakes"
           className="cart-back-link"
@@ -92,11 +95,19 @@ const Cart = () => {
         </div>
 
         <div className="cart-layout">
-          {/* LEFT */}
+
+          {/* ==================================
+              LEFT
+          ================================== */}
 
           <div className="cart-items-list">
+
             {cartItems.map(
               (item, index) => {
+                // ==============================
+                // BASIC DATA
+                // ==============================
+
                 const cakeId =
                   Number(
                     item.cake_id ||
@@ -117,6 +128,49 @@ const Cart = () => {
                   itemPrice *
                   quantity;
 
+                // ==============================
+                // FILLING
+                // ==============================
+
+                const fillingId =
+                  item.filling_id ||
+                  item.selectedFillingId ||
+                  null;
+
+                const fillingName =
+                  item.selectedFilling ||
+                  item.selected_filling ||
+                  "";
+
+                const fillingCharge =
+                  Number(
+                    item.filling_charge ||
+                      0
+                  );
+
+                // ==============================
+                // FLAVOUR
+                // ==============================
+
+                const flavourId =
+                  item.flavour_id ||
+                  item.selectedFlavourId ||
+                  null;
+
+                const flavourName =
+                  item.selectedFlavour ||
+                  item.selected_flavour ||
+                  "";
+
+                // ==============================
+                // REFERENCE IMAGE
+                // ==============================
+
+                const referenceImage =
+                  item.reference_image ||
+                  item.referenceImage ||
+                  "";
+
                 return (
                   <div
                     className="cart-item"
@@ -129,9 +183,23 @@ const Cart = () => {
                       item.selectedColorId ||
                       item.selectedColor ||
                       "no-color"
+                    }-${
+                      flavourId ||
+                      flavourName ||
+                      "no-flavour"
+                    }-${
+                      fillingId ||
+                      fillingName ||
+                      "no-filling"
+                    }-${
+                      referenceImage ||
+                      "no-reference"
                     }-${index}`}
                   >
-                    {/* IMAGE */}
+
+                    {/* ==========================
+                        CAKE IMAGE
+                    ========================== */}
 
                     <Link
                       to={`/cake/${cakeId}`}
@@ -149,10 +217,14 @@ const Cart = () => {
                       )}
                     </Link>
 
-                    {/* DETAILS */}
+                    {/* ==========================
+                        DETAILS
+                    ========================== */}
 
                     <div className="cart-item-details">
+
                       <div className="cart-item-top">
+
                         <div>
                           <Link
                             to={`/cake/${cakeId}`}
@@ -162,31 +234,79 @@ const Cart = () => {
                             </h3>
                           </Link>
 
+                          {/* ====================
+                              OPTIONS
+                          ==================== */}
+
                           <div className="cart-item-options">
+
+                            {/* SIZE */}
+
                             <span>
                               Size:{" "}
                               <strong>
                                 {item.selectedSize ||
+                                  item.selected_size ||
                                   "—"}
                               </strong>
                             </span>
 
-                            {item.selectedColor && (
+                            {/* COLOR */}
+
+                            {(item.selectedColor ||
+                              item.selected_color) && (
                               <>
                                 <span className="option-divider" />
 
                                 <span>
                                   Color:{" "}
                                   <strong>
-                                    {
-                                      item.selectedColor
-                                    }
+                                    {item.selectedColor ||
+                                      item.selected_color}
                                   </strong>
                                 </span>
                               </>
                             )}
+
+                            {/* FLAVOUR */}
+
+                            <span className="option-divider" />
+
+                            <span>
+                              Flavour:{" "}
+                              <strong>
+                                {flavourName ||
+                                  "—"}
+                              </strong>
+                            </span>
+
+                            {/* FILLING */}
+
+                            <span className="option-divider" />
+
+                            <span>
+                              Filling:{" "}
+                              <strong>
+                                {fillingName ||
+                                  "No Filling"}
+                              </strong>
+
+                              {fillingName &&
+                                fillingCharge >
+                                  0 && (
+                                  <>
+                                    {" "}
+                                    (+ Rs.{" "}
+                                    {fillingCharge.toLocaleString()}
+                                    )
+                                  </>
+                                )}
+                            </span>
+
                           </div>
                         </div>
+
+                        {/* REMOVE */}
 
                         <button
                           type="button"
@@ -204,7 +324,118 @@ const Cart = () => {
                         </button>
                       </div>
 
-                      {/* MESSAGE */}
+                      {/* ========================
+                          REFERENCE IMAGE
+                      ======================== */}
+
+                      {referenceImage && (
+                        <div
+                          style={{
+                            marginTop: "14px",
+                            padding: "12px",
+                            border:
+                              "1px solid var(--border)",
+                            borderRadius: "10px",
+                            background:
+                              "var(--background-soft)",
+                            maxWidth: "390px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent:
+                                "space-between",
+                              gap: "12px",
+                              marginBottom: "9px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "7px",
+                              }}
+                            >
+                              <ImageIcon
+                                size={15}
+                              />
+
+                              <strong
+                                style={{
+                                  fontSize:
+                                    "11px",
+                                }}
+                              >
+                                Reference Cake
+                                Image
+                              </strong>
+                            </div>
+
+                            <a
+                              href={
+                                referenceImage
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                display: "flex",
+                                alignItems:
+                                  "center",
+                                gap: "4px",
+                                fontSize:
+                                  "10px",
+                                color:
+                                  "var(--accent-dark)",
+                                textDecoration:
+                                  "none",
+                              }}
+                            >
+                              View Full
+
+                              <ExternalLink
+                                size={11}
+                              />
+                            </a>
+                          </div>
+
+                          <a
+                            href={
+                              referenceImage
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <img
+                              src={
+                                referenceImage
+                              }
+                              alt="Customer cake reference"
+                              style={{
+                                display:
+                                  "block",
+                                width:
+                                  "100%",
+                                maxWidth:
+                                  "220px",
+                                height:
+                                  "145px",
+                                objectFit:
+                                  "cover",
+                                borderRadius:
+                                  "8px",
+                                border:
+                                  "1px solid var(--border)",
+                              }}
+                            />
+                          </a>
+                        </div>
+                      )}
+
+                      {/* ========================
+                          CAKE MESSAGE
+                      ======================== */}
 
                       {item.cakeMessage && (
                         <div className="cart-cake-message">
@@ -222,10 +453,63 @@ const Cart = () => {
                         </div>
                       )}
 
-                      {/* BOTTOM */}
+                      {/* ========================
+                          PRICE BREAKDOWN
+                      ======================== */}
+
+                      {fillingName &&
+                        fillingCharge >
+                          0 && (
+                        <div
+                          style={{
+                            marginTop:
+                              "10px",
+
+                            fontSize:
+                              "12px",
+
+                            color:
+                              "var(--text-soft)",
+
+                            display:
+                              "flex",
+
+                            flexWrap:
+                              "wrap",
+
+                            gap:
+                              "6px 14px",
+                          }}
+                        >
+                          {Number(
+                            item.base_price ||
+                              0
+                          ) > 0 && (
+                            <span>
+                              Cake: Rs.{" "}
+                              {Number(
+                                item.base_price
+                              ).toLocaleString()}
+                            </span>
+                          )}
+
+                          <span>
+                            Filling: + Rs.{" "}
+                            {fillingCharge.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* ========================
+                          BOTTOM
+                      ======================== */}
 
                       <div className="cart-item-bottom">
+
+                        {/* QUANTITY */}
+
                         <div className="cart-quantity-selector">
+
                           <button
                             type="button"
                             onClick={() =>
@@ -262,7 +546,10 @@ const Cart = () => {
                               size={14}
                             />
                           </button>
+
                         </div>
+
+                        {/* PRICE */}
 
                         <div className="cart-item-price">
                           <span>
@@ -276,6 +563,7 @@ const Cart = () => {
                             {lineTotal.toLocaleString()}
                           </strong>
                         </div>
+
                       </div>
                     </div>
                   </div>
@@ -284,9 +572,12 @@ const Cart = () => {
             )}
           </div>
 
-          {/* RIGHT */}
+          {/* ==================================
+              RIGHT
+          ================================== */}
 
           <aside className="cart-summary">
+
             <span className="section-kicker">
               ORDER SUMMARY
             </span>
@@ -296,6 +587,7 @@ const Cart = () => {
             </h2>
 
             <div className="cart-summary-lines">
+
               <div>
                 <span>
                   Subtotal
@@ -319,6 +611,7 @@ const Cart = () => {
                   checkout
                 </span>
               </div>
+
             </div>
 
             <div className="cart-summary-total">
@@ -350,6 +643,7 @@ const Cart = () => {
             </p>
 
             <div className="cart-summary-features">
+
               <div>
                 <strong>
                   Freshly baked
@@ -357,6 +651,19 @@ const Cart = () => {
 
                 <span>
                   Made fresh for your
+                  order.
+                </span>
+              </div>
+
+              <div>
+                <strong>
+                  Custom cakes
+                </strong>
+
+                <span>
+                  Your selected flavour,
+                  filling and reference
+                  design stay with your
                   order.
                 </span>
               </div>
@@ -371,7 +678,9 @@ const Cart = () => {
                   stay protected.
                 </span>
               </div>
+
             </div>
+
           </aside>
         </div>
       </div>
