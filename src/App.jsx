@@ -1,10 +1,8 @@
-import {
-  Routes,
-  Route,
-} from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import CustomerLayout from "./layouts/CustomerLayout";
 import AdminLayout from "./layouts/AdminLayout";
+import HomeBanner from "./pages/admin/HomeBanner";
 
 /* ==========================================
    CUSTOMER
@@ -43,161 +41,62 @@ function App() {
           CUSTOMER
       ========================= */}
 
-      <Route
-        element={
-          <CustomerLayout />
-        }
-      >
-        <Route
-          path="/"
-          element={<Home />}
-        />
+      <Route element={<CustomerLayout />}>
+        <Route path="/" element={<Home />} />
 
-        <Route
-          path="/cakes"
-          element={<Cakes />}
-        />
+        <Route path="/cakes" element={<Cakes />} />
 
-        <Route
-          path="/cake/:id"
-          element={
-            <CakeDetails />
-          }
-        />
+        <Route path="/cake/:id" element={<CakeDetails />} />
 
-        <Route
-          path="/cart"
-          element={<Cart />}
-        />
+        <Route path="/cart" element={<Cart />} />
 
-        <Route
-          path="/checkout"
-          element={
-            <Checkout />
-          }
-        />
+        <Route path="/checkout" element={<Checkout />} />
 
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+        <Route path="/login" element={<Login />} />
 
-        <Route
-          path="/register"
-          element={
-            <Register />
-          }
-        />
+        <Route path="/register" element={<Register />} />
 
-        <Route
-          path="/my-orders"
-          element={
-            <MyOrders />
-          }
-        />
+        <Route path="/my-orders" element={<MyOrders />} />
 
-        <Route
-          path="/my-orders/:id"
-          element={
-            <OrderDetails />
-          }
-        />
+        <Route path="/my-orders/:id" element={<OrderDetails />} />
       </Route>
 
       {/* =========================
           ADMIN LOGIN
       ========================= */}
 
-      <Route
-        path="/admin/login"
-        element={
-          <AdminLogin />
-        }
-      />
+      <Route path="/admin/login" element={<AdminLogin />} />
 
       {/* =========================
           ADMIN PANEL
       ========================= */}
 
-      <Route
-        path="/admin"
-        element={
-          <AdminLayout />
-        }
-      >
-        <Route
-          path="dashboard"
-          element={
-            <Dashboard />
-          }
-        />
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route path="dashboard" element={<Dashboard />} />
 
-        <Route
-          path="orders"
-          element={
-            <Orders />
-          }
-        />
+        <Route path="orders" element={<Orders />} />
 
-        <Route
-          path="cakes"
-          element={
-            <CakesAdmin />
-          }
-        />
+        <Route path="cakes" element={<CakesAdmin />} />
 
-        <Route
-          path="categories"
-          element={
-            <Categories />
-          }
-        />
+        <Route path="categories" element={<Categories />} />
 
-        <Route
-          path="sizes"
-          element={
-            <Sizes />
-          }
-        />
+        <Route path="sizes" element={<Sizes />} />
 
-        <Route
-          path="colors"
-          element={
-            <Colors />
-          }
-        />
+        <Route path="colors" element={<Colors />} />
+
+        <Route path="/admin/home-banner" element={<HomeBanner />} />
 
         {/* FILLINGS */}
 
-        <Route
-          path="fillings"
-          element={
-            <Fillings />
-          }
-        />
+        <Route path="fillings" element={<Fillings />} />
 
         {/* FLAVOURS */}
 
-        <Route
-          path="flavours"
-          element={
-            <Flavours />
-          }
-        />
+        <Route path="flavours" element={<Flavours />} />
 
-        <Route
-          path="customers"
-          element={
-            <Customers />
-          }
-        />
+        <Route path="customers" element={<Customers />} />
 
-        <Route
-          path="payment-settings"
-          element={
-            <PaymentSettings />
-          }
-        />
+        <Route path="payment-settings" element={<PaymentSettings />} />
       </Route>
     </Routes>
   );

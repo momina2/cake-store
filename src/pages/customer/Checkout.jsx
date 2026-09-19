@@ -21,6 +21,10 @@ import {
   CreditCard,
   ScrollText,
   CircleCheck,
+  X,
+  FileText,
+  Upload,
+  Copy,
 } from "lucide-react";
 
 import toast, {
@@ -68,6 +72,26 @@ const Checkout = () => {
   const [
     paymentError,
     setPaymentError,
+  ] = useState("");
+
+  const [
+    paymentReceipt,
+    setPaymentReceipt,
+  ] = useState(null);
+
+  const [
+    paymentReceiptPath,
+    setPaymentReceiptPath,
+  ] = useState("");
+
+  const [
+    uploadingReceipt,
+    setUploadingReceipt,
+  ] = useState(false);
+
+  const [
+    copiedValue,
+    setCopiedValue,
   ] = useState("");
 
   // ==========================================
@@ -162,26 +186,15 @@ const Checkout = () => {
           const response =
             await fetch(
               `${API_ROOT}/PaymentSettings/get.php`,
-              {
-                method: "GET",
-              }
+              { method: "GET" }
             );
 
-          let result;
-
-          try {
-            result =
-              await response.json();
-          } catch {
-            throw new Error(
-              "Server returned an invalid payment settings response."
-            );
-          }
+          const result =
+            await response.json();
 
           if (
             !response.ok ||
-            result.status !==
-              "success"
+            result.status !== "success"
           ) {
             throw new Error(
               result.message ||
@@ -192,13 +205,18 @@ const Checkout = () => {
           const data =
             result.data || {};
 
-          if (
-            !data.bank_name ||
-            !data.account_title ||
-            !data.account_number
-          ) {
+          const accounts =
+            Array.isArray(data.accounts)
+              ? data.accounts.filter(
+                  (account) =>
+                    account &&
+                    account.status === "Active"
+                )
+              : [];
+
+          if (!accounts.length) {
             throw new Error(
-              "Payment details have not been configured yet."
+              "No active payment account has been configured yet."
             );
           }
 
@@ -206,25 +224,9 @@ const Checkout = () => {
             payment_method:
               data.payment_method ||
               "Advance Payment",
-
-            bank_name:
-              data.bank_name ||
-              "",
-
-            account_title:
-              data.account_title ||
-              "",
-
-            account_number:
-              data.account_number ||
-              "",
-
-            iban:
-              data.iban || "",
-
             instructions:
-              data.instructions ||
-              "",
+              data.instructions || "",
+            accounts,
           });
         } catch (error) {
           console.error(
@@ -232,23 +234,159 @@ const Checkout = () => {
             error
           );
 
-          setPaymentSettings(
-            null
-          );
+          setPaymentSettings(null);
 
           setPaymentError(
             error.message ||
               "Unable to load payment details."
           );
         } finally {
-          setPaymentLoading(
-            false
-          );
+          setPaymentLoading(false);
         }
       };
 
     loadPaymentSettings();
   }, []);
+
+  // ==========================================
+  // COPY PAYMENT VALUE
+  // ==========================================
+
+  const copyPaymentValue =
+    async (value) => {
+      if (!value) return;
+
+      try {
+        await navigator.clipboard.writeText(
+          String(value)
+        );
+
+        setCopiedValue(String(value));
+
+        window.setTimeout(
+          () => setCopiedValue(""),
+          1600
+        );
+      } catch {
+        toast.error(
+          "Unable to copy value."
+        );
+      }
+    };
+
+  // ==========================================
+  // PAYMENT RECEIPT
+  // ==========================================
+
+  const handleReceiptChange =
+    async (event) => {
+      const file =
+        event.target.files?.[0];
+
+      if (!file) return;
+
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "application/pdf",
+      ];
+
+      if (
+        !allowedTypes.includes(
+          file.type
+        )
+      ) {
+        toast.error(
+          "Please upload JPG, PNG or PDF receipt."
+        );
+        event.target.value = "";
+        return;
+      }
+
+      if (
+        file.size >
+        5 * 1024 * 1024
+      ) {
+        toast.error(
+          "Receipt must be 5 MB or smaller."
+        );
+        event.target.value = "";
+        return;
+      }
+
+      try {
+        setUploadingReceipt(true);
+
+        const body =
+          new FormData();
+
+        body.append(
+          "receipt",
+          file
+        );
+
+        const response =
+          await fetch(
+            `${API_ROOT}/PaymentReceipts/upload.php`,
+            {
+              method: "POST",
+              body,
+            }
+          );
+
+        const result =
+          await response.json();
+
+        if (
+          !response.ok ||
+          result.status !== "success"
+        ) {
+          throw new Error(
+            result.message ||
+              "Unable to upload receipt."
+          );
+        }
+
+        const path =
+          result.data?.path ||
+          result.path ||
+          "";
+
+        if (!path) {
+          throw new Error(
+            "Receipt path was not returned."
+          );
+        }
+
+        setPaymentReceipt(file);
+        setPaymentReceiptPath(path);
+
+        toast.success(
+          "Payment receipt uploaded."
+        );
+      } catch (error) {
+        console.error(
+          "Receipt upload error:",
+          error
+        );
+
+        setPaymentReceipt(null);
+        setPaymentReceiptPath("");
+
+        toast.error(
+          error.message ||
+            "Unable to upload receipt."
+        );
+      } finally {
+        setUploadingReceipt(false);
+        event.target.value = "";
+      }
+    };
+
+  const removeReceipt = () => {
+    setPaymentReceipt(null);
+    setPaymentReceiptPath("");
+  };
 
   // ==========================================
   // HANDLE CHANGE
@@ -466,6 +604,13 @@ const Checkout = () => {
       // ORDER ITEMS
       // ======================================
 
+      if (!paymentReceiptPath) {
+        toast.error(
+          "Please upload your payment receipt before placing the order."
+        );
+        return;
+      }
+
       const orderItems =
         cartItems.map(
           (item) => {
@@ -632,7 +777,11 @@ const Checkout = () => {
         discount: 0,
 
         payment_method:
+          paymentSettings?.payment_method ||
           "Advance Payment",
+
+        payment_receipt:
+          paymentReceiptPath,
 
         items:
           orderItems,
@@ -1273,126 +1422,216 @@ const Checkout = () => {
                       </div>
                     </div>
 
-                    <div className="checkout-bank-details">
-
-                      {/* BANK */}
-
-                      <div className="checkout-bank-detail">
-                        <div className="checkout-bank-icon">
-                          <Landmark
-                            size={18}
-                          />
-                        </div>
-
-                        <div>
-                          <span>
-                            Bank / Wallet
-                          </span>
-
-                          <strong>
-                            {
-                              paymentSettings
-                                ?.bank_name
-                            }
-                          </strong>
-                        </div>
-                      </div>
-
-                      {/* ACCOUNT TITLE */}
-
-                      <div className="checkout-bank-detail">
-                        <div className="checkout-bank-icon">
-                          <User
-                            size={18}
-                          />
-                        </div>
-
-                        <div>
-                          <span>
-                            Account Title
-                          </span>
-
-                          <strong>
-                            {
-                              paymentSettings
-                                ?.account_title
-                            }
-                          </strong>
-                        </div>
-                      </div>
-
-                      {/* ACCOUNT NUMBER */}
-
-                      <div className="checkout-bank-detail">
-                        <div className="checkout-bank-icon">
-                          <CreditCard
-                            size={18}
-                          />
-                        </div>
-
-                        <div>
-                          <span>
-                            Account Number
-                          </span>
-
-                          <strong>
-                            {
-                              paymentSettings
-                                ?.account_number
-                            }
-                          </strong>
-                        </div>
-                      </div>
-
-                      {/* IBAN */}
-
-                      {paymentSettings
-                        ?.iban && (
-                        <div className="checkout-bank-detail">
-                          <div className="checkout-bank-icon">
-                            <Landmark
-                              size={18}
-                            />
-                          </div>
-
-                          <div>
-                            <span>
-                              IBAN
-                            </span>
-
-                            <strong className="checkout-bank-long-value">
-                              {
-                                paymentSettings
-                                  .iban
-                              }
-                            </strong>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
                     {paymentSettings
                       ?.instructions && (
-                      <div className="checkout-payment-instructions">
-                        <ScrollText
-                          size={18}
-                        />
+                      <div className="checkout-payment-instructions checkout-payment-instructions-top">
+                        <ScrollText size={18} />
 
                         <div>
                           <strong>
-                            Payment
-                            Instructions
+                            Payment Instructions
                           </strong>
 
                           <p>
                             {
-                              paymentSettings
-                                .instructions
+                              paymentSettings.instructions
                             }
                           </p>
                         </div>
                       </div>
                     )}
+
+                    <div className="checkout-payment-accounts">
+                      {paymentSettings
+                        ?.accounts?.map(
+                          (account, index) => (
+                            <div
+                              className="checkout-payment-account-card"
+                              key={
+                                account.id ||
+                                `${account.account_number}-${index}`
+                              }
+                            >
+                              <div className="checkout-payment-account-heading">
+                                <div className="checkout-bank-icon">
+                                  <Landmark size={18} />
+                                </div>
+
+                                <div>
+                                  <span>
+                                    Payment Account {index + 1}
+                                  </span>
+
+                                  <strong>
+                                    {account.bank_name}
+                                  </strong>
+                                </div>
+                              </div>
+
+                              <div className="checkout-bank-details">
+                                <div className="checkout-bank-detail">
+                                  <div className="checkout-bank-icon">
+                                    <User size={18} />
+                                  </div>
+
+                                  <div>
+                                    <span>
+                                      Account Title
+                                    </span>
+                                    <strong>
+                                      {account.account_title}
+                                    </strong>
+                                  </div>
+                                </div>
+
+                                <div className="checkout-bank-detail">
+                                  <div className="checkout-bank-icon">
+                                    <CreditCard size={18} />
+                                  </div>
+
+                                  <div>
+                                    <span>
+                                      Account Number
+                                    </span>
+
+                                    <div className="checkout-copy-value-row">
+                                      <strong>
+                                        {account.account_number}
+                                      </strong>
+
+                                      <button
+                                        type="button"
+                                        className="checkout-copy-button"
+                                        onClick={() =>
+                                          copyPaymentValue(
+                                            account.account_number
+                                          )
+                                        }
+                                      >
+                                        <Copy size={14} />
+                                        <span>
+                                          {copiedValue ===
+                                          String(account.account_number)
+                                            ? "Copied!"
+                                            : "Copy"}
+                                        </span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {account.iban && (
+                                  <div className="checkout-bank-detail checkout-bank-detail-full">
+                                    <div className="checkout-bank-icon">
+                                      <Landmark size={18} />
+                                    </div>
+
+                                    <div>
+                                      <span>IBAN</span>
+
+                                      <div className="checkout-copy-value-row">
+                                        <strong className="checkout-bank-long-value">
+                                          {account.iban}
+                                        </strong>
+
+                                        <button
+                                          type="button"
+                                          className="checkout-copy-button"
+                                          onClick={() =>
+                                            copyPaymentValue(
+                                              account.iban
+                                            )
+                                          }
+                                        >
+                                          <Copy size={14} />
+                                          <span>
+                                            {copiedValue ===
+                                            String(account.iban)
+                                              ? "Copied!"
+                                              : "Copy"}
+                                          </span>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        )}
+                    </div>
+
+                    <div className="checkout-receipt-upload">
+                      <div className="checkout-receipt-heading">
+                        <div>
+                          <span>
+                            PAYMENT RECEIPT *
+                          </span>
+                          <strong>
+                            Upload Payment Proof
+                          </strong>
+                          <p>
+                            Transfer the amount, then upload your JPG,
+                            PNG or PDF receipt before placing the order.
+                          </p>
+                        </div>
+                      </div>
+
+                      {!paymentReceiptPath ? (
+                        <label className="checkout-receipt-dropzone">
+                          {uploadingReceipt ? (
+                            <LoaderCircle
+                              size={22}
+                              className="checkout-receipt-spinner"
+                            />
+                          ) : (
+                            <Upload size={22} />
+                          )}
+
+                          <strong>
+                            {uploadingReceipt
+                              ? "Uploading receipt..."
+                              : "Choose Receipt"}
+                          </strong>
+
+                          <span>
+                            JPG, PNG or PDF · Max 5 MB
+                          </span>
+
+                          <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                            onChange={handleReceiptChange}
+                            disabled={uploadingReceipt}
+                          />
+                        </label>
+                      ) : (
+                        <div className="checkout-receipt-file">
+                          <div className="checkout-receipt-file-icon">
+                            <FileText size={20} />
+                          </div>
+
+                          <div className="checkout-receipt-file-info">
+                            <strong>
+                              {paymentReceipt?.name ||
+                                "Payment receipt"}
+                            </strong>
+                            <span>
+                              Receipt uploaded successfully
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={removeReceipt}
+                            aria-label="Remove receipt"
+                            title="Remove receipt"
+                          >
+                            <X size={17} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="checkout-payment-total">
                       <span>
@@ -1725,7 +1964,9 @@ const Checkout = () => {
                 </span>
 
                 <strong>
-                  Advance Payment
+                  {paymentSettings
+                    ?.payment_method ||
+                    "Advance Payment"}
                 </strong>
               </div>
 

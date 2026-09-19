@@ -52,6 +52,7 @@ const Flavours = () => {
     setFormData,
   ] = useState({
     name: "",
+    charge: "",
     status: "Active",
   });
 
@@ -112,6 +113,11 @@ const Flavours = () => {
               name:
                 flavour.name ||
                 "",
+
+              charge: Number(
+                flavour.charge ||
+                  0
+              ),
 
               status:
                 flavour.status ||
@@ -188,6 +194,7 @@ const Flavours = () => {
   const resetForm = () => {
     setFormData({
       name: "",
+      charge: "",
       status: "Active",
     });
 
@@ -221,6 +228,14 @@ const Flavours = () => {
     setFormData({
       name:
         flavour.name || "",
+
+      charge:
+        flavour.charge !==
+        undefined
+          ? String(
+              flavour.charge
+            )
+          : "",
 
       status:
         flavour.status ||
@@ -281,9 +296,39 @@ const Flavours = () => {
       const cleanName =
         formData.name.trim();
 
+      const chargeValue =
+        Number(
+          formData.charge
+        );
+
+      // ========================================
+      // VALIDATION
+      // ========================================
+
       if (!cleanName) {
         setError(
           "Flavour name is required."
+        );
+
+        return;
+      }
+
+      if (
+        formData.charge === "" ||
+        Number.isNaN(
+          chargeValue
+        )
+      ) {
+        setError(
+          "Valid flavour charge is required."
+        );
+
+        return;
+      }
+
+      if (chargeValue < 0) {
+        setError(
+          "Flavour charge cannot be negative."
         );
 
         return;
@@ -302,12 +347,12 @@ const Flavours = () => {
             ? `${API_BASE}/update.php`
             : `${API_BASE}/add.php`;
 
-        // ======================================
-        // REQUEST BODY
-        // ======================================
-
         const requestBody = {
           name: cleanName,
+
+          charge:
+            chargeValue,
+
           status:
             formData.status,
         };
@@ -318,10 +363,6 @@ const Flavours = () => {
               editingFlavour.id
             );
         }
-
-        // ======================================
-        // API CALL
-        // ======================================
 
         const response =
           await fetch(
@@ -365,10 +406,6 @@ const Flavours = () => {
                 : "Unable to add flavour.")
           );
         }
-
-        // ======================================
-        // SUCCESS
-        // ======================================
 
         setModalOpen(false);
 
@@ -438,6 +475,11 @@ const Flavours = () => {
 
                   name:
                     flavour.name,
+
+                  charge: Number(
+                    flavour.charge ||
+                      0
+                  ),
 
                   status:
                     newStatus,
@@ -512,8 +554,8 @@ const Flavours = () => {
 
           <p>
             Manage cake flavours
-            available for customer
-            orders.
+            and their additional
+            customer charges.
           </p>
         </div>
 
@@ -526,6 +568,7 @@ const Flavours = () => {
           disabled={loading}
         >
           <Plus size={17} />
+
           Add Flavour
         </button>
       </div>
@@ -565,7 +608,9 @@ const Flavours = () => {
       {/* TOOLBAR */}
 
       <div className="admin-category-toolbar">
+
         <div className="admin-category-search">
+
           <Search
             size={17}
           />
@@ -585,6 +630,7 @@ const Flavours = () => {
               )
             }
           />
+
         </div>
 
         <span>
@@ -596,12 +642,14 @@ const Flavours = () => {
             ? "flavour"
             : "flavours"}
         </span>
+
       </div>
 
       {/* CONTENT */}
 
       {loading ? (
         <div className="admin-category-empty">
+
           <LoaderCircle
             size={28}
           />
@@ -614,10 +662,12 @@ const Flavours = () => {
             Fetching flavours
             from the database.
           </p>
+
         </div>
       ) : filteredFlavours.length ===
         0 ? (
         <div className="admin-category-empty">
+
           <h3>
             No flavours found.
           </h3>
@@ -627,9 +677,11 @@ const Flavours = () => {
             flavour or change
             your search.
           </p>
+
         </div>
       ) : (
         <div className="admin-category-grid">
+
           {filteredFlavours.map(
             (flavour) => (
               <div
@@ -638,6 +690,7 @@ const Flavours = () => {
                   flavour.id
                 }
               >
+
                 {/* VISUAL */}
 
                 <div
@@ -653,17 +706,19 @@ const Flavours = () => {
                       "var(--background-soft)",
                   }}
                 >
+
                   <div
                     style={{
                       textAlign:
                         "center",
                     }}
                   >
+
                     <CakeSlice
-                      size={40}
+                      size={35}
                       style={{
                         marginBottom:
-                          "9px",
+                          "8px",
 
                         opacity:
                           0.65,
@@ -676,19 +731,22 @@ const Flavours = () => {
                           "var(--serif)",
 
                         fontSize:
-                          "22px",
+                          "23px",
 
                         fontWeight:
                           "600",
                       }}
                     >
-                      {flavour.name}
+                      Rs.{" "}
+                      {Number(
+                        flavour.charge
+                      ).toLocaleString()}
                     </div>
 
                     <div
                       style={{
                         marginTop:
-                          "5px",
+                          "4px",
 
                         fontSize:
                           "8px",
@@ -700,8 +758,9 @@ const Flavours = () => {
                           "var(--text-soft)",
                       }}
                     >
-                      CAKE FLAVOUR
+                      ADDITIONAL CHARGE
                     </div>
+
                   </div>
 
                   <span
@@ -716,11 +775,13 @@ const Flavours = () => {
                       flavour.status
                     }
                   </span>
+
                 </div>
 
                 {/* CARD BODY */}
 
                 <div className="admin-category-card-body">
+
                   <div>
                     <span>
                       CAKE FLAVOUR
@@ -734,6 +795,7 @@ const Flavours = () => {
                   </div>
 
                   <div className="admin-category-actions">
+
                     <button
                       type="button"
                       className="admin-category-status-button"
@@ -763,17 +825,17 @@ const Flavours = () => {
                         size={16}
                       />
                     </button>
+
                   </div>
                 </div>
               </div>
             )
           )}
+
         </div>
       )}
 
-      {/* ======================================
-          ADD / EDIT MODAL
-      ====================================== */}
+      {/* ADD / EDIT MODAL */}
 
       {modalOpen && (
         <div
@@ -782,6 +844,7 @@ const Flavours = () => {
             closeModal
           }
         >
+
           <div
             className="admin-category-modal"
             onClick={(
@@ -790,10 +853,13 @@ const Flavours = () => {
               event.stopPropagation()
             }
           >
+
             {/* HEADER */}
 
             <div className="admin-category-modal-header">
+
               <div>
+
                 <span>
                   {editingFlavour
                     ? "EDIT FLAVOUR"
@@ -805,6 +871,7 @@ const Flavours = () => {
                     ? "Update Flavour"
                     : "Add Flavour"}
                 </h2>
+
               </div>
 
               <button
@@ -820,6 +887,7 @@ const Flavours = () => {
                   size={18}
                 />
               </button>
+
             </div>
 
             {/* FORM */}
@@ -830,7 +898,6 @@ const Flavours = () => {
                 handleSubmit
               }
             >
-              {/* ERROR */}
 
               {error && (
                 <div
@@ -852,6 +919,7 @@ const Flavours = () => {
               {/* NAME */}
 
               <div className="admin-category-form-group">
+
                 <label>
                   Flavour Name
                 </label>
@@ -862,6 +930,33 @@ const Flavours = () => {
                   placeholder="e.g. Chocolate"
                   value={
                     formData.name
+                  }
+                  disabled={
+                    saving
+                  }
+                  onChange={
+                    handleChange
+                  }
+                />
+
+              </div>
+
+              {/* CHARGE */}
+
+              <div className="admin-category-form-group">
+
+                <label>
+                  Additional Charge (Rs.)
+                </label>
+
+                <input
+                  type="number"
+                  name="charge"
+                  min="0"
+                  step="1"
+                  placeholder="e.g. 500"
+                  value={
+                    formData.charge
                   }
                   disabled={
                     saving
@@ -889,17 +984,18 @@ const Flavours = () => {
                       "1.6",
                   }}
                 >
-                  This flavour will
-                  be available for
-                  customers to select
-                  while ordering a
-                  cake.
+                  This amount will be
+                  added to the cake price
+                  when the customer selects
+                  this flavour.
                 </small>
+
               </div>
 
               {/* STATUS */}
 
               <div className="admin-category-form-group">
+
                 <label>
                   Status
                 </label>
@@ -916,6 +1012,7 @@ const Flavours = () => {
                     handleChange
                   }
                 >
+
                   <option value="Active">
                     Active
                   </option>
@@ -923,12 +1020,15 @@ const Flavours = () => {
                   <option value="Inactive">
                     Inactive
                   </option>
+
                 </select>
+
               </div>
 
               {/* ACTIONS */}
 
               <div className="admin-category-modal-actions">
+
                 <button
                   type="button"
                   className="admin-secondary-button"
@@ -949,11 +1049,13 @@ const Flavours = () => {
                     saving
                   }
                 >
+
                   {saving ? (
                     <>
                       <LoaderCircle
                         size={16}
                       />
+
                       Saving...
                     </>
                   ) : editingFlavour ? (
@@ -961,12 +1063,17 @@ const Flavours = () => {
                   ) : (
                     "Add Flavour"
                   )}
+
                 </button>
+
               </div>
+
             </form>
+
           </div>
         </div>
       )}
+
     </div>
   );
 };

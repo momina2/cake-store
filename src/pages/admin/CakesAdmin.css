@@ -1237,3 +1237,89 @@
     padding: 18px;
   }
 }
+/* =========================================
+   FILLINGS + FLAVOURS
+========================================= */
+
+.cakes-admin-option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cakes-admin-option-card {
+  width: 100%;
+  min-height: 66px;
+  padding: 13px 15px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+
+  border: 1px solid var(--border);
+  background: var(--background-soft);
+
+  cursor: pointer;
+
+  text-align: left;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.cakes-admin-option-card:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.cakes-admin-option-card.selected {
+  border-color: var(--text);
+  background: var(--background);
+}
+
+.cakes-admin-option-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cakes-admin-option-card strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cakes-admin-option-card span {
+  font-size: 10px;
+  color: var(--text-soft);
+}
+
+.cakes-admin-option-card b {
+  width: 23px;
+  height: 23px;
+
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: var(--text);
+  color: var(--background);
+
+  font-size: 12px;
+}
+
+.cakes-admin-option-card:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .cakes-admin-option-grid {
+    grid-template-columns: 1fr;
+  }
+}
