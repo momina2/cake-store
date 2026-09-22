@@ -18,6 +18,8 @@
 //   const [categories, setCategories] = useState([]);
 //   const [availableSizes, setAvailableSizes] = useState([]);
 //   const [availableColors, setAvailableColors] = useState([]);
+//   const [availableFillings, setAvailableFillings] = useState([]);
+//   const [availableFlavours, setAvailableFlavours] = useState([]);
 
 //   const [searchTerm, setSearchTerm] = useState("");
 //   const [modalOpen, setModalOpen] = useState(false);
@@ -41,6 +43,8 @@
 //     status: "Active",
 //     sizes: [{ size_id: "", size: "", price: "" }],
 //     colors: [],
+//     fillings: [],
+//     flavours: [],
 //   });
 
 //   // ==========================================
@@ -134,6 +138,34 @@
 //           : item.status || "Active",
 //     }));
 
+//     const rawFillings = Array.isArray(cake.fillings)
+//       ? cake.fillings
+//       : Array.isArray(cake.cake_fillings)
+//       ? cake.cake_fillings
+//       : [];
+
+//     const normalizedFillings = rawFillings.map((item) => ({
+//       filling_id: Number(item.filling_id || item.id || 0),
+//       name: item.filling_name || item.name || "",
+//       charge: Number(item.charge || 0),
+//       status: item.status || "Active",
+//       master_status: item.master_status || "Active",
+//     }));
+
+//     const rawFlavours = Array.isArray(cake.flavours)
+//       ? cake.flavours
+//       : Array.isArray(cake.cake_flavours)
+//       ? cake.cake_flavours
+//       : [];
+
+//     const normalizedFlavours = rawFlavours.map((item) => ({
+//       flavour_id: Number(item.flavour_id || item.id || 0),
+//       name: item.flavour_name || item.name || "",
+//       charge: Number(item.charge || 0),
+//       status: item.status || "Active",
+//       master_status: item.master_status || "Active",
+//     }));
+
 //     return {
 //       id: Number(cake.id),
 //       name: cake.name || "",
@@ -160,6 +192,8 @@
 //       sort_order: Number(cake.sort_order || 0),
 //       sizes: normalizedSizes,
 //       colors: normalizedColors,
+//       fillings: normalizedFillings,
+//       flavours: normalizedFlavours,
 //     };
 //   };
 
@@ -225,6 +259,46 @@
 //     );
 //   };
 
+//   const fetchFillings = async () => {
+//     const response = await fetch(`${API_ROOT}/Fillings/getAll.php`);
+//     const result = await readJson(response);
+
+//     if (!response.ok || result.status !== "success") {
+//       throw new Error(result.message || "Unable to load fillings.");
+//     }
+
+//     const rows = getArray(result, "fillings");
+
+//     setAvailableFillings(
+//       rows.map((item) => ({
+//         id: Number(item.id),
+//         name: item.name || "",
+//         charge: Number(item.charge || 0),
+//         status: item.status || "Active",
+//       }))
+//     );
+//   };
+
+//   const fetchFlavours = async () => {
+//     const response = await fetch(`${API_ROOT}/Flavours/getAll.php`);
+//     const result = await readJson(response);
+
+//     if (!response.ok || result.status !== "success") {
+//       throw new Error(result.message || "Unable to load flavours.");
+//     }
+
+//     const rows = getArray(result, "flavours");
+
+//     setAvailableFlavours(
+//       rows.map((item) => ({
+//         id: Number(item.id),
+//         name: item.name || "",
+//         charge: Number(item.charge || 0),
+//         status: item.status || "Active",
+//       }))
+//     );
+//   };
+
 //   const fetchCakes = async () => {
 //     const response = await fetch(`${API_ROOT}/Cakes/getAll.php`);
 //     const result = await readJson(response);
@@ -246,6 +320,8 @@
 //         fetchCategories(),
 //         fetchSizes(),
 //         fetchColors(),
+//         fetchFillings(),
+//         fetchFlavours(),
 //         fetchCakes(),
 //       ]);
 //     } catch (err) {
@@ -299,6 +375,8 @@
 //       status: "Active",
 //       sizes: [{ size_id: "", size: "", price: "" }],
 //       colors: [],
+//       fillings: [],
+//       flavours: [],
 //     });
 
 //     setEditingCake(null);
@@ -340,6 +418,16 @@
 //       colors: Array.isArray(cake.colors)
 //         ? cake.colors
 //             .map((item) => Number(item?.color_id || item?.id || 0))
+//             .filter(Boolean)
+//         : [],
+//       fillings: Array.isArray(cake.fillings)
+//         ? cake.fillings
+//             .map((item) => Number(item?.filling_id || item?.id || 0))
+//             .filter(Boolean)
+//         : [],
+//       flavours: Array.isArray(cake.flavours)
+//         ? cake.flavours
+//             .map((item) => Number(item?.flavour_id || item?.id || 0))
 //             .filter(Boolean)
 //         : [],
 //     });
@@ -579,6 +667,26 @@
 //     });
 //   };
 
+//   const toggleFilling = (fillingId) => {
+//     const id = Number(fillingId);
+//     setFormData((previous) => ({
+//       ...previous,
+//       fillings: previous.fillings.includes(id)
+//         ? previous.fillings.filter((selectedId) => selectedId !== id)
+//         : [...previous.fillings, id],
+//     }));
+//   };
+
+//   const toggleFlavour = (flavourId) => {
+//     const id = Number(flavourId);
+//     setFormData((previous) => ({
+//       ...previous,
+//       flavours: previous.flavours.includes(id)
+//         ? previous.flavours.filter((selectedId) => selectedId !== id)
+//         : [...previous.flavours, id],
+//     }));
+//   };
+
 //   // ==========================================
 //   // BUILD API BODY
 //   // ==========================================
@@ -662,6 +770,40 @@
 //       throw new Error("One or more selected colors are invalid.");
 //     }
 
+//     const selectedFillings = formData.fillings.map((fillingId) => ({
+//       filling_id: Number(fillingId),
+//       status: "Active",
+//     }));
+
+//     if (
+//       selectedFillings.some(
+//         (item) =>
+//           !item.filling_id ||
+//           !availableFillings.some(
+//             (filling) => Number(filling.id) === item.filling_id
+//           )
+//       )
+//     ) {
+//       throw new Error("One or more selected fillings are invalid.");
+//     }
+
+//     const selectedFlavours = formData.flavours.map((flavourId) => ({
+//       flavour_id: Number(flavourId),
+//       status: "Active",
+//     }));
+
+//     if (
+//       selectedFlavours.some(
+//         (item) =>
+//           !item.flavour_id ||
+//           !availableFlavours.some(
+//             (flavour) => Number(flavour.id) === item.flavour_id
+//           )
+//       )
+//     ) {
+//       throw new Error("One or more selected flavours are invalid.");
+//     }
+
 //     const cleanGallery = formData.galleryImages
 //       .map((image) => image.trim())
 //       .filter(
@@ -692,6 +834,8 @@
 //       images,
 //       sizes: cleanSizes,
 //       colors: selectedColors,
+//       fillings: selectedFillings,
+//       flavours: selectedFlavours,
 //     };
 //   };
 
@@ -798,6 +942,16 @@
 
 //         colors: (cake.colors || []).map((item) => ({
 //           color_id: Number(item.color_id),
+//           status: item.status || "Active",
+//         })),
+
+//         fillings: (cake.fillings || []).map((item) => ({
+//           filling_id: Number(item.filling_id),
+//           status: item.status || "Active",
+//         })),
+
+//         flavours: (cake.flavours || []).map((item) => ({
+//           flavour_id: Number(item.flavour_id),
 //           status: item.status || "Active",
 //         })),
 //       };
@@ -1005,6 +1159,16 @@
 //                   <div>
 //                     <span>Colors</span>
 //                     <strong>{cake.colors?.length || 0}</strong>
+//                   </div>
+
+//                   <div>
+//                     <span>Fillings</span>
+//                     <strong>{cake.fillings?.length || 0}</strong>
+//                   </div>
+
+//                   <div>
+//                     <span>Flavours</span>
+//                     <strong>{cake.flavours?.length || 0}</strong>
 //                   </div>
 
 //                   <div>
@@ -1501,6 +1665,88 @@
 //                 )}
 //               </div>
 
+//               <div className="cakes-admin-section">
+//                 <div className="cakes-admin-section-heading">
+//                   <div>
+//                     <span>CUSTOMIZATION</span>
+//                     <h3>Available Fillings</h3>
+//                   </div>
+//                   <small>{formData.fillings.length} selected</small>
+//                 </div>
+
+//                 {availableFillings.filter((item) => item.status === "Active").length === 0 ? (
+//                   <div className="cakes-admin-no-options">
+//                     No active fillings available. First add fillings from Admin → Fillings.
+//                   </div>
+//                 ) : (
+//                   <div className="cakes-admin-color-grid">
+//                     {availableFillings
+//                       .filter((item) => item.status === "Active" || formData.fillings.includes(Number(item.id)))
+//                       .map((filling) => {
+//                         const id = Number(filling.id);
+//                         const selected = formData.fillings.includes(id);
+//                         const inactive = filling.status !== "Active";
+//                         return (
+//                           <button
+//                             key={id}
+//                             type="button"
+//                             disabled={saving || (inactive && !selected)}
+//                             className={`cakes-admin-color-option ${selected ? "selected" : ""}`}
+//                             onClick={() => toggleFilling(id)}
+//                           >
+//                             <span className="cakes-admin-color-label">
+//                               {filling.name} · + Rs. {Number(filling.charge || 0).toLocaleString()}
+//                               {inactive ? " (Inactive)" : ""}
+//                             </span>
+//                             {selected && <strong>✓</strong>}
+//                           </button>
+//                         );
+//                       })}
+//                   </div>
+//                 )}
+//               </div>
+
+//               <div className="cakes-admin-section">
+//                 <div className="cakes-admin-section-heading">
+//                   <div>
+//                     <span>CUSTOMIZATION</span>
+//                     <h3>Available Flavours</h3>
+//                   </div>
+//                   <small>{formData.flavours.length} selected</small>
+//                 </div>
+
+//                 {availableFlavours.filter((item) => item.status === "Active").length === 0 ? (
+//                   <div className="cakes-admin-no-options">
+//                     No active flavours available. First add flavours from Admin → Flavours.
+//                   </div>
+//                 ) : (
+//                   <div className="cakes-admin-color-grid">
+//                     {availableFlavours
+//                       .filter((item) => item.status === "Active" || formData.flavours.includes(Number(item.id)))
+//                       .map((flavour) => {
+//                         const id = Number(flavour.id);
+//                         const selected = formData.flavours.includes(id);
+//                         const inactive = flavour.status !== "Active";
+//                         return (
+//                           <button
+//                             key={id}
+//                             type="button"
+//                             disabled={saving || (inactive && !selected)}
+//                             className={`cakes-admin-color-option ${selected ? "selected" : ""}`}
+//                             onClick={() => toggleFlavour(id)}
+//                           >
+//                             <span className="cakes-admin-color-label">
+//                               {flavour.name} · + Rs. {Number(flavour.charge || 0).toLocaleString()}
+//                               {inactive ? " (Inactive)" : ""}
+//                             </span>
+//                             {selected && <strong>✓</strong>}
+//                           </button>
+//                         );
+//                       })}
+//                   </div>
+//                 )}
+//               </div>
+
 //               <div className="cakes-admin-form-grid">
 //                 <div className="cakes-admin-field">
 //                   <label>Status</label>
@@ -1623,7 +1869,7 @@ const CakesAdmin = () => {
     galleryImages: [""],
     featured: false,
     status: "Active",
-    sizes: [{ size_id: "", size: "", price: "" }],
+    sizes: [{ size_id: "", size: "", price: 1 }],
     colors: [],
     fillings: [],
     flavours: [],
@@ -1955,7 +2201,7 @@ const CakesAdmin = () => {
       galleryImages: [""],
       featured: false,
       status: "Active",
-      sizes: [{ size_id: "", size: "", price: "" }],
+      sizes: [{ size_id: "", size: "", price: 1 }],
       colors: [],
       fillings: [],
       flavours: [],
@@ -2295,32 +2541,16 @@ const CakesAdmin = () => {
     }
 
     const cleanSizes = formData.sizes
-      .filter(
-        (item) =>
-          Number(item.size_id) > 0 &&
-          item.price !== ""
-      )
+      .filter((item) => Number(item.size_id) > 0)
       .map((item) => ({
         size_id: Number(item.size_id),
-        price: Number(item.price),
+        // Legacy compatibility value only. Actual price is flavour × lb.
+        price: 1,
         status: "Active",
       }));
 
     if (cleanSizes.length === 0) {
-      throw new Error(
-        "Please select at least one size and enter its price."
-      );
-    }
-
-    if (
-      cleanSizes.some(
-        (item) =>
-          !item.size_id ||
-          Number.isNaN(item.price) ||
-          item.price <= 0
-      )
-    ) {
-      throw new Error("Please enter valid sizes and prices.");
+      throw new Error("Please select at least one cake size.");
     }
 
     const sizeIds = cleanSizes.map((item) => item.size_id);
@@ -2518,7 +2748,7 @@ const CakesAdmin = () => {
 
         sizes: (cake.sizes || []).map((item) => ({
           size_id: Number(item.size_id),
-          price: Number(item.price),
+          price: 1,
           status: item.status || "Active",
         })),
 
@@ -2581,15 +2811,18 @@ const CakesAdmin = () => {
   // ==========================================
 
   const getStartingPrice = (cake) => {
-    if (!Array.isArray(cake.sizes) || cake.sizes.length === 0) {
-      return 0;
-    }
+    if (!Array.isArray(cake.flavours) || cake.flavours.length === 0) return 0;
 
-    const prices = cake.sizes
-      .map((item) => Number(item.price))
-      .filter((price) => !Number.isNaN(price));
+    const prices = cake.flavours
+      .filter(
+        (item) =>
+          (item.status || "Active") === "Active" &&
+          (item.master_status || "Active") === "Active"
+      )
+      .map((item) => Number(item.charge || 0))
+      .filter((price) => Number.isFinite(price) && price > 0);
 
-    return prices.length > 0 ? Math.min(...prices) : 0;
+    return prices.length ? Math.min(...prices) : 0;
   };
 
   // ==========================================
@@ -2608,7 +2841,7 @@ const CakesAdmin = () => {
 
           <p>
             Manage cakes, multiple images, categories,
-            size-wise prices, colors and availability.
+            available sizes, flavour-based per-lb prices, colors and availability.
           </p>
         </div>
 
@@ -3064,10 +3297,9 @@ const CakesAdmin = () => {
               <div className="cakes-admin-section">
                 <div className="cakes-admin-section-heading">
                   <div>
-                    <span>PRICING</span>
-                    <h3>Sizes & Prices</h3>
+                    <span>SIZING</span>
+                    <h3>Available Sizes</h3>
                   </div>
-
                   <button
                     type="button"
                     onClick={addSizeRow}
@@ -3081,10 +3313,14 @@ const CakesAdmin = () => {
                   </button>
                 </div>
 
+                <p style={{ margin: "0 0 14px", fontSize: "12px", color: "var(--text-soft)" }}>
+                  Select available sizes only. Price is calculated automatically:
+                  flavour price per lb × selected size.
+                </p>
+
                 {availableSizes.filter((size) => size.status === "Active").length === 0 ? (
                   <div className="cakes-admin-no-options">
-                    No active sizes available. First add sizes
-                    from Admin → Sizes.
+                    No active sizes available. First add sizes from Admin → Sizes.
                   </div>
                 ) : (
                   <div className="cakes-admin-size-rows">
@@ -3092,6 +3328,7 @@ const CakesAdmin = () => {
                       <div
                         className="cakes-admin-size-row"
                         key={index}
+                        style={{ gridTemplateColumns: "1fr auto" }}
                       >
                         <select
                           value={item.size_id || ""}
@@ -3108,18 +3345,13 @@ const CakesAdmin = () => {
                                 ...updatedSizes[index],
                                 size_id: id || "",
                                 size: selected?.name || "",
+                                price: 1,
                               };
-                              return {
-                                ...previous,
-                                sizes: updatedSizes,
-                              };
+                              return { ...previous, sizes: updatedSizes };
                             });
                           }}
                         >
-                          <option value="">
-                            Select Size
-                          </option>
-
+                          <option value="">Select Size</option>
                           {availableSizes
                             .filter(
                               (size) =>
@@ -3127,13 +3359,11 @@ const CakesAdmin = () => {
                                 Number(size.id) === Number(item.size_id)
                             )
                             .map((size) => {
-                              const usedByAnotherRow =
-                                formData.sizes.some(
-                                  (selectedItem, selectedIndex) =>
-                                    selectedIndex !== index &&
-                                    Number(selectedItem.size_id) ===
-                                      Number(size.id)
-                                );
+                              const usedByAnotherRow = formData.sizes.some(
+                                (selectedItem, selectedIndex) =>
+                                  selectedIndex !== index &&
+                                  Number(selectedItem.size_id) === Number(size.id)
+                              );
 
                               return (
                                 <option
@@ -3142,39 +3372,18 @@ const CakesAdmin = () => {
                                   disabled={usedByAnotherRow}
                                 >
                                   {size.name}
-                                  {size.status !== "Active"
-                                    ? " (Inactive)"
-                                    : ""}
+                                  {size.status !== "Active" ? " (Inactive)" : ""}
                                 </option>
                               );
                             })}
                         </select>
 
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="Price"
-                          value={item.price}
-                          disabled={saving}
-                          onChange={(event) =>
-                            handleSizeChange(
-                              index,
-                              "price",
-                              event.target.value
-                            )
-                          }
-                        />
-
                         <button
                           type="button"
                           className="cakes-admin-row-delete"
-                          disabled={
-                            saving ||
-                            formData.sizes.length === 1
-                          }
-                          onClick={() =>
-                            removeSizeRow(index)
-                          }
+                          disabled={saving || formData.sizes.length === 1}
+                          onClick={() => removeSizeRow(index)}
+                          title="Remove size"
                         >
                           <Trash2 size={15} />
                         </button>
@@ -3318,7 +3527,7 @@ const CakesAdmin = () => {
                             onClick={() => toggleFlavour(id)}
                           >
                             <span className="cakes-admin-color-label">
-                              {flavour.name} · + Rs. {Number(flavour.charge || 0).toLocaleString()}
+                              {flavour.name} · Rs. {Number(flavour.charge || 0).toLocaleString()} / lb
                               {inactive ? " (Inactive)" : ""}
                             </span>
                             {selected && <strong>✓</strong>}

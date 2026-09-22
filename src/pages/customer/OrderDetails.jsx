@@ -356,6 +356,11 @@ const OrderDetails = () => {
       },
 
 
+      fulfillmentMethod:
+        rawOrder.fulfillment_method ||
+        rawOrder.fulfillmentMethod ||
+        "COD",
+
       notes:
         rawOrder.notes || "",
 
@@ -1367,7 +1372,9 @@ const OrderDetails = () => {
                 />
 
                 <h2>
-                  Delivery Information
+                  {order.fulfillmentMethod === "Take Away"
+                    ? "Pickup Information"
+                    : "Delivery Information"}
                 </h2>
 
               </div>
@@ -1385,6 +1392,21 @@ const OrderDetails = () => {
                   <strong>
                     {order.customer
                       .name || "—"}
+                  </strong>
+
+                </div>
+
+
+                <div>
+
+                  <span>
+                    Order Method
+                  </span>
+
+                  <strong>
+                    {order.fulfillmentMethod === "Take Away"
+                      ? "Take Away"
+                      : "Cash on Delivery"}
                   </strong>
 
                 </div>
@@ -1421,7 +1443,9 @@ const OrderDetails = () => {
                 <div>
 
                   <span>
-                    Delivery Date
+                    {order.fulfillmentMethod === "Take Away"
+                      ? "Pickup Date"
+                      : "Delivery Date"}
                   </span>
 
                   <strong>
@@ -1435,7 +1459,9 @@ const OrderDetails = () => {
                 <div>
 
                   <span>
-                    Delivery Time
+                    {order.fulfillmentMethod === "Take Away"
+                      ? "Pickup Time"
+                      : "Delivery Time"}
                   </span>
 
                   <strong>
@@ -1446,6 +1472,8 @@ const OrderDetails = () => {
                 </div>
 
 
+                {order.fulfillmentMethod !== "Take Away" && (
+                  <>
                 <div>
 
                   <span>
@@ -1472,6 +1500,8 @@ const OrderDetails = () => {
                   </strong>
 
                 </div>
+                  </>
+                )}
 
               </div>
 
@@ -1542,15 +1572,15 @@ const OrderDetails = () => {
               <div>
 
                 <span>
-                  Delivery
+                  {order.fulfillmentMethod === "Take Away"
+                    ? "Take Away"
+                    : "Delivery"}
                 </span>
 
                 <strong>
-
-                  Rs.{" "}
-
-                  {order.deliveryCharges.toLocaleString()}
-
+                  {order.fulfillmentMethod === "Take Away"
+                    ? "Rs. 0"
+                    : `Rs. ${order.deliveryCharges.toLocaleString()}`}
                 </strong>
 
               </div>

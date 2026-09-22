@@ -8,6 +8,7 @@ import {
   Search,
   X,
   LoaderCircle,
+  Upload,
 } from "lucide-react";
 
 const API_BASE =
@@ -25,6 +26,8 @@ const Categories = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -169,6 +172,8 @@ const Categories = () => {
       status: "Active",
     });
 
+    setImageFile(null);
+    setImagePreview("");
     setEditingCategory(null);
   };
 
@@ -179,6 +184,8 @@ const Categories = () => {
   const openAddModal = () => {
     resetForm();
 
+    setImageFile(null);
+    setImagePreview("");
     setError("");
     setSuccess("");
 
@@ -195,10 +202,11 @@ const Categories = () => {
     setFormData({
       name: category.name || "",
       image: category.image || "",
-      status:
-        category.status || "Active",
+      status: category.status || "Active",
     });
 
+    setImageFile(null);
+    setImagePreview(category.image || "");
     setError("");
     setSuccess("");
 
@@ -233,6 +241,85 @@ const Categories = () => {
   };
 
   // ==========================================
+  // IMAGE SELECT
+  // ==========================================
+
+  const handleImageSelect = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setError("Please select a JPG, JPEG, PNG or WEBP image.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Category image must be 5 MB or smaller.");
+      event.target.value = "";
+      return;
+    }
+
+    setError("");
+    setImageFile(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
+
+  // ==========================================
+  // UPLOAD IMAGE
+  // ==========================================
+
+  const uploadCategoryImage = async (file) => {
+    const uploadData = new FormData();
+    uploadData.append("image", file);
+
+    const response = await fetch(
+      `${API_BASE}/upload.php`,
+      {
+        method: "POST",
+        body: uploadData,
+      }
+    );
+
+    let result;
+
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error("Image upload returned an invalid response.");
+    }
+
+    if (!response.ok || result.status !== "success") {
+      throw new Error(
+        result.message || "Unable to upload category image."
+      );
+    }
+
+    const uploadedUrl =
+      result.url ||
+      result.image_url ||
+      result.data?.url ||
+      result.data?.image_url ||
+      "";
+
+    if (!uploadedUrl) {
+      throw new Error("Uploaded image URL was not returned by server.");
+    }
+
+    return uploadedUrl;
+  };
+
+
+  // ==========================================
   // ADD / UPDATE CATEGORY
   // ==========================================
 
@@ -245,9 +332,6 @@ const Categories = () => {
     const cleanName =
       formData.name.trim();
 
-    const cleanImage =
-      formData.image.trim();
-
     if (!cleanName) {
       setError(
         "Category name is required."
@@ -255,15 +339,19 @@ const Categories = () => {
       return;
     }
 
-    if (!cleanImage) {
-      setError(
-        "Category image URL is required."
-      );
+    if (!imageFile && !formData.image.trim()) {
+      setError("Category image is required.");
       return;
     }
 
     try {
       setSaving(true);
+
+      let finalImageUrl = formData.image.trim();
+
+      if (imageFile) {
+        finalImageUrl = await uploadCategoryImage(imageFile);
+      }
 
       const isEditing =
         Boolean(editingCategory);
@@ -279,7 +367,7 @@ const Categories = () => {
       const requestBody = {
         name: cleanName,
 
-        image_url: cleanImage,
+        image_url: finalImageUrl,
 
         status: formData.status,
       };
@@ -756,28 +844,45 @@ const Categories = () => {
                 />
               </div>
 
-              {/* IMAGE */}
+              {/* CATEGORY IMAGE UPLOAD */}
 
               <div className="admin-category-form-group">
-                <label>Image URL</label>
+                <label>Category Image *</label>
 
-                <input
-                  type="text"
-                  name="image"
-                  placeholder="https://..."
-                  value={formData.image}
-                  disabled={saving}
-                  onChange={handleChange}
-                />
+                <label className="admin-category-upload-box">
+                  <Upload size={20} />
+
+                  <div>
+                    <strong>
+                      {imageFile
+                        ? imageFile.name
+                        : editingCategory
+                        ? "Change Image"
+                        : "Choose Image"}
+                    </strong>
+
+                    <span>
+                      JPG, JPEG, PNG or WEBP · Max 5 MB
+                    </span>
+                  </div>
+
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleImageSelect}
+                    disabled={saving}
+                    hidden
+                  />
+                </label>
               </div>
 
               {/* IMAGE PREVIEW */}
 
-              {formData.image && (
+              {(imagePreview || formData.image) && (
                 <div className="admin-category-image-preview">
                   <img
-                    src={formData.image}
-                    alt="Preview"
+                    src={imagePreview || formData.image}
+                    alt="Category preview"
                   />
                 </div>
               )}

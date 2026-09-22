@@ -25,6 +25,9 @@ import {
   FileText,
   Upload,
   Copy,
+  MessageCircle,
+  Truck,
+  ShoppingBag,
 } from "lucide-react";
 
 import toast, {
@@ -95,6 +98,13 @@ const Checkout = () => {
   ] = useState("");
 
   // ==========================================
+  // CHECKOUT SETTINGS
+  // ==========================================
+
+  const [checkoutSettings, setCheckoutSettings] = useState(null);
+  const [checkoutSettingsLoading, setCheckoutSettingsLoading] = useState(true);
+
+  // ==========================================
   // FORM
   // ==========================================
 
@@ -108,16 +118,27 @@ const Checkout = () => {
       deliveryDate: "",
       deliveryTime: "",
       notes: "",
+      fulfillmentMethod: "COD",
     });
 
   const [errors, setErrors] =
     useState({});
 
-  const deliveryCharges = 250;
+  const codEnabled = Number(checkoutSettings?.cod_enabled ?? 1) === 1;
+  const takeawayEnabled = Number(checkoutSettings?.takeaway_enabled ?? 1) === 1;
+  const isTakeAway = formData.fulfillmentMethod === "Take Away";
+  const deliveryMode = checkoutSettings?.delivery_mode || "not included";
+  const deliveryEnabled = Number(checkoutSettings?.delivery_enabled ?? 1) === 1;
+  const deliveryCharges = !isTakeAway && deliveryEnabled && deliveryMode === "fixed"
+    ? Number(checkoutSettings?.delivery_charge || 0)
+    : 0;
 
-  const grandTotal =
-    Number(cartTotal) +
-    deliveryCharges;
+  const grandTotal = Number(cartTotal) + deliveryCharges;
+
+  const timingEnabled = Number(checkoutSettings?.timing_enabled ?? 1) === 1;
+  const deliverySlots = Array.isArray(checkoutSettings?.time_slots)
+    ? checkoutSettings.time_slots.filter(Boolean)
+    : [];
 
   // ==========================================
   // LOAD LOGGED-IN CUSTOMER
@@ -246,6 +267,31 @@ const Checkout = () => {
       };
 
     loadPaymentSettings();
+  }, []);
+
+  // ==========================================
+  // LOAD CHECKOUT SETTINGS
+  // ==========================================
+
+  useEffect(() => {
+    const loadCheckoutSettings = async () => {
+      try {
+        setCheckoutSettingsLoading(true);
+        const response = await fetch(`${API_ROOT}/CheckoutSettings/get.php`);
+        const result = await response.json();
+        if (!response.ok || result.status !== "success") {
+          throw new Error(result.message || "Unable to load checkout settings.");
+        }
+        setCheckoutSettings(result.data || null);
+      } catch (error) {
+        console.error("Checkout settings loading error:", error);
+        setCheckoutSettings(null);
+      } finally {
+        setCheckoutSettingsLoading(false);
+      }
+    };
+
+    loadCheckoutSettings();
   }, []);
 
   // ==========================================
@@ -444,14 +490,16 @@ const Checkout = () => {
         "Phone number is required.";
     }
 
-    if (!formData.address.trim()) {
-      newErrors.address =
-        "Delivery address is required.";
+    if (!isTakeAway && !formData.address.trim()) {
+      newErrors.address = "Delivery address is required.";
     }
 
-    if (!formData.city.trim()) {
-      newErrors.city =
-        "City is required.";
+    if (!isTakeAway && !formData.city.trim()) {
+      newErrors.city = "City is required.";
+    }
+
+    if (!formData.fulfillmentMethod) {
+      newErrors.fulfillmentMethod = "Please choose Cash on Delivery or Take Away.";
     }
 
     if (
@@ -461,11 +509,8 @@ const Checkout = () => {
         "Delivery date is required.";
     }
 
-    if (
-      !formData.deliveryTime
-    ) {
-      newErrors.deliveryTime =
-        "Delivery time is required.";
+    if (timingEnabled && !formData.deliveryTime) {
+      newErrors.deliveryTime = "Delivery time is required.";
     }
 
     setErrors(newErrors);
@@ -756,11 +801,14 @@ const Checkout = () => {
         customer_phone:
           formData.phone.trim(),
 
+        fulfillment_method:
+          formData.fulfillmentMethod,
+
         delivery_address:
-          formData.address.trim(),
+          isTakeAway ? "Take Away" : formData.address.trim(),
 
         delivery_city:
-          formData.city.trim(),
+          isTakeAway ? "Lahore" : formData.city.trim(),
 
         delivery_date:
           formData.deliveryDate,
@@ -1164,8 +1212,29 @@ const Checkout = () => {
                   </div>
                 </div>
 
+                <div className="checkout-receive-method">
+                  <label className="checkout-receive-label">HOW WOULD YOU LIKE TO RECEIVE YOUR ORDER? *</label>
+                  <div className="checkout-receive-options">
+                    {codEnabled && (
+                      <button type="button" className={`checkout-receive-option ${formData.fulfillmentMethod === "COD" ? "active" : ""}`} onClick={() => setFormData((old) => ({ ...old, fulfillmentMethod: "COD" }))}>
+                        <span className="checkout-receive-icon"><Truck size={21} /></span>
+                        <span><strong>Cash on Delivery</strong><small>Get your cake delivered to your address</small></span>
+                      </button>
+                    )}
+                    {takeawayEnabled && (
+                      <button type="button" className={`checkout-receive-option ${formData.fulfillmentMethod === "Take Away" ? "active" : ""}`} onClick={() => setFormData((old) => ({ ...old, fulfillmentMethod: "Take Away" }))}>
+                        <span className="checkout-receive-icon"><ShoppingBag size={21} /></span>
+                        <span><strong>Take Away</strong><small>Collect your cake yourself</small></span>
+                      </button>
+                    )}
+                  </div>
+                  {errors.fulfillmentMethod && <span className="checkout-error">{errors.fulfillmentMethod}</span>}
+                </div>
+
                 <div className="checkout-form-grid">
 
+                  {!isTakeAway && (
+                    <>
                   {/* ADDRESS */}
 
                   <div className="form-group full-field">
@@ -1229,11 +1298,14 @@ const Checkout = () => {
                     </select>
                   </div>
 
+                    </>
+                  )}
+
                   {/* DATE */}
 
                   <div className="form-group">
                     <label>
-                      Delivery Date *
+                      {isTakeAway ? "Pickup Date" : "Delivery Date"} *
                     </label>
 
                     <div className="checkout-input">
@@ -1267,62 +1339,64 @@ const Checkout = () => {
 
                   {/* TIME */}
 
-                  <div className="form-group">
-                    <label>
-                      Preferred Time *
-                    </label>
+                  {timingEnabled && (
+                    <div className="form-group">
+                      <label>
+                        {isTakeAway ? "Preferred Pickup Time" : (checkoutSettings?.timing_heading || "Preferred Delivery Time")} *
+                      </label>
 
-                    <div className="checkout-input">
-                      <Clock3
-                        size={17}
-                      />
+                      {checkoutSettings?.timing_note && (
+                        <p className="checkout-setting-note">
+                          {checkoutSettings.timing_note}
+                        </p>
+                      )}
 
-                      <select
-                        name="deliveryTime"
-                        value={
-                          formData.deliveryTime
-                        }
-                        onChange={
-                          handleChange
-                        }
-                        disabled={
-                          submitting
-                        }
-                      >
-                        <option value="">
-                          Select time
-                        </option>
+                      <div className="checkout-input">
+                        <Clock3 size={17} />
+                        <select
+                          name="deliveryTime"
+                          value={formData.deliveryTime}
+                          onChange={handleChange}
+                          disabled={submitting || checkoutSettingsLoading}
+                        >
+                          <option value="">Select time</option>
+                          {deliverySlots.map((slot, index) => (
+                            <option key={`${slot}-${index}`} value={slot}>
+                              {slot}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                        <option value="10:00 AM - 12:00 PM">
-                          10:00 AM - 12:00 PM
-                        </option>
-
-                        <option value="12:00 PM - 02:00 PM">
-                          12:00 PM - 02:00 PM
-                        </option>
-
-                        <option value="02:00 PM - 04:00 PM">
-                          02:00 PM - 04:00 PM
-                        </option>
-
-                        <option value="04:00 PM - 06:00 PM">
-                          04:00 PM - 06:00 PM
-                        </option>
-
-                        <option value="06:00 PM - 08:00 PM">
-                          06:00 PM - 08:00 PM
-                        </option>
-                      </select>
+                      {errors.deliveryTime && (
+                        <span className="checkout-error">{errors.deliveryTime}</span>
+                      )}
                     </div>
+                  )}
+                  {!isTakeAway && codEnabled && (
+                    <div className="form-group full-field checkout-delivery-note">
+                      <div className="checkout-delivery-note-icon"><MessageCircle size={18} /></div>
+                      <div>
+                        <strong>Delivery Information</strong>
+                        <p>{checkoutSettings?.cod_note || checkoutSettings?.delivery_note || "Please share your exact delivery location with us on WhatsApp."}</p>
+                        {checkoutSettings?.whatsapp_number && (
+                          <a href={`https://wa.me/${String(checkoutSettings.whatsapp_number).replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer">
+                            WhatsApp: {checkoutSettings.whatsapp_number}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
-                    {errors.deliveryTime && (
-                      <span className="checkout-error">
-                        {
-                          errors.deliveryTime
-                        }
-                      </span>
-                    )}
-                  </div>
+                  {isTakeAway && takeawayEnabled && (
+                    <div className="form-group full-field checkout-delivery-note">
+                      <div className="checkout-delivery-note-icon"><ShoppingBag size={18} /></div>
+                      <div>
+                        <strong>Pickup Information</strong>
+                        <p>{checkoutSettings?.takeaway_note || "You can collect your cake yourself at the selected pickup date and time."}</p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* NOTES */}
 
@@ -1932,13 +2006,15 @@ const Checkout = () => {
                 </div>
 
                 <div>
-                  <span>
-                    Delivery
-                  </span>
-
+                  <span>Delivery</span>
                   <strong>
-                    Rs.{" "}
-                    {deliveryCharges.toLocaleString()}
+                    {isTakeAway
+                      ? "Rs. 0"
+                      : !deliveryEnabled
+                        ? "Not Available"
+                        : deliveryMode === "fixed"
+                          ? `Rs. ${deliveryCharges.toLocaleString()}`
+                          : "Not Included"}
                   </strong>
                 </div>
               </div>
@@ -1980,6 +2056,7 @@ const Checkout = () => {
                 disabled={
                   submitting ||
                   paymentLoading ||
+                  checkoutSettingsLoading ||
                   !paymentSettings ||
                   Boolean(
                     paymentError
