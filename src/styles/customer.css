@@ -83,6 +83,19 @@
   width: 100%;
 }
 
+/* TRACK ORDER - DESKTOP AND MOBILE */
+.nav-links .track-order-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.nav-links .track-order-nav-link svg {
+  flex-shrink: 0;
+}
+
 .nav-actions {
   width: 170px;
 
@@ -1171,6 +1184,12 @@
 
   .nav-links a::after {
     display: none;
+  }
+
+  .nav-links .track-order-nav-link {
+    display: inline-flex;
+    justify-content: flex-start;
+    width: 100%;
   }
 
   .brand {
@@ -6614,4 +6633,101 @@
 
 .footer-contact p.footer-contact-item {
   margin: 0;
+}
+
+/* ORDER DETAILS BUTTON */
+
+.order-details-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  min-height: 44px;
+  padding: 11px 20px;
+
+  background: #2c211c;
+  color: #ffffff;
+
+  border: 1px solid #2c211c;
+  border-radius: 6px;
+
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.order-details-button:hover {
+  background: #8b5e3c;
+  border-color: #8b5e3c;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.order-details-button:focus-visible {
+  outline: 2px solid #b9795d;
+  outline-offset: 3px;
+}
+
+.order-details-button svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .order-details-button {
+    width: 100%;
+  }
+}
+
+/* MY ORDERS - CAKE DETAILS BUTTON */
+
+.my-orders-page button.order-details-button,
+.my-orders-page .order-details-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  min-height: 44px;
+  padding: 12px 22px;
+
+  background-color: #2c211c !important;
+  color: #ffffff !important;
+
+  border: 1px solid #2c211c !important;
+  border-radius: 6px;
+
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-decoration: none;
+
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.my-orders-page button.order-details-button:hover,
+.my-orders-page .order-details-button:hover {
+  background-color: #8b5e3c !important;
+  border-color: #8b5e3c !important;
+  color: #ffffff !important;
+}
+
+.my-orders-page .order-details-button svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .my-orders-page .order-details-button {
+    width: 100%;
+  }
 }
