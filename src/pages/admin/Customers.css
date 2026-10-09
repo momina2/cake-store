@@ -1072,3 +1072,32 @@
 .footer-location-external-icon {
   opacity: 1;
 }
+
+/* =========================================
+   FOOTER CONTACT - SAME TEXT STYLE
+========================================= */
+
+.footer-contact .footer-location-link,
+.footer-contact .footer-contact-item {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  font-family: inherit !important;
+  letter-spacing: 0 !important;
+}
+
+.footer-contact .footer-location-link span,
+.footer-contact .footer-contact-item span {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  font-family: inherit !important;
+}
+
+.footer-contact .footer-location-link {
+  color: inherit;
+}
+
+.footer-contact .footer-contact-item {
+  color: inherit;
+}
